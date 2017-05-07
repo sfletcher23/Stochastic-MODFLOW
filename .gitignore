@@ -1,0 +1,17 @@
+# System ignores
+.DS_Store
+
+# MATLAB ignores
+*.m~
+
+#MODFLOW ignores
+mf2005dbl
+*.bas
+*.dis
+*.hds
+*.list
+*.lpf
+*.nam
+*.oc
+*.pcg
+*.wel
