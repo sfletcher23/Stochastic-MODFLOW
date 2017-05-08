@@ -65,7 +65,7 @@ vka_max = 1.e-2
 numWells = 2
 pump_min = -50000.
 pump_max = -3000.
-sampleSize = 100
+sampleSize = 500
 
 # Fixed Parameter Definitions
 # Model domain and grid definition
@@ -109,12 +109,14 @@ spd = {(0, 0): ['print head', 'save head']}
 samples = genParamSamples(hk_min=hk_min, hk_max=hk_max,vka_min=vka_min, vka_max=vka_max, numWells=numWells,
                           pump_min=pump_min, pump_max=-pump_max, sampleSize=sampleSize)
 
-
 # Define output parameters for each run
 modflow_success = []
 head_object = []
 head_data1 = np.zeros([sampleSize, nstp])
 head_data2 = np.zeros([sampleSize, nstp])
+
+# Get date and setup saving
+datetimeStr = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
 # Run MODFLOW for each of the paramter samples
 for i in range(sampleSize):
@@ -220,13 +222,12 @@ for i in range(sampleSize):
         os.remove(model_name + '.pcg')
         os.remove(model_name + '.wel')
 
+    # Save output in .mat file
+    outputDic = dict(zip(['head_data1', 'head_data2', 'time', 'modflow_success'],
+                         [head_data1, head_data2, time, modflow_success]))
+    outputDic.update(samples)
+    io.savemat('modflowData' + datetimeStr, outputDic)
 
-# Save output in .mat file
-outputDic = dict(zip(['head_data1', 'head_data2', 'time', 'modflow_success'],
-                     [head_data1, head_data2, time, modflow_success]))
-outputDic.update(samples)
-datetimeStr = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-io.savemat('modflowData' + datetimeStr, outputDic)
 
 
 
