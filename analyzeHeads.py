@@ -17,30 +17,43 @@ from scipy.stats import uniform
 import scipy.io as io
 import datetime
 from scipy.stats import uniform
+from pyDOE import *
 
 
-# Write function to generate range of inputs for hk, vka, pumping rate in each well
-def genParamSamples(hk_min, hk_max, vka_min, vka_max, numWells, pump_min, pump_max, sampleSize):
+# Write function to generate range of inputs for hk, vka, pumping rate in each well using latin hypercube sampling
+def genParamSamples(hk_min, hk_max, vka_min, vka_max, numWells, pump_min, pump_max, time_min, time_max, sampleSize):
     # Generate list of all paramters
-    params_in_sample = ['hk', 'vka']
+    params_in_sample = ['hk', 'vka', 'time']
     for n in range(numWells):
         params_in_sample.append('pump_rate_' + str(n + 1))
 
+    # Generate LHS samples
+    numParam = np.size(params_in_sample)
+    lhd = lhs(numParam, samples=sampleSize)
+
     # Generate arrays of hk and vka
+    loc = hk_min
     scale = hk_max - hk_min
-    hk = uniform.rvs(loc=hk_min, scale=scale, size=sampleSize)
+    hk = uniform(loc=loc, scale=scale).ppf(lhd[:, 0])
+    loc = vka_min
     scale = vka_max - vka_min
-    vka = uniform.rvs(loc=hk_min, scale=scale, size=sampleSize)
+    vka = uniform(loc=loc, scale=scale).ppf(lhd[:, 1])
+
+    # Generate arrays of time
+    loc = time_min
+    scale = time_max - time_min
+    time = uniform(loc=loc, scale=scale).ppf(lhd[:, 2])
 
     # Generate arrays of pumping rate
     pump = np.zeros([numWells, sampleSize])
+    loc = pump_min
     scale = pump_max - pump_min
     for n in range(numWells):
-        pump[n, :] = uniform.rvs(pump_min, scale, size=sampleSize)
+        pump[n, :] = uniform(loc=loc, scale=scale).ppf(lhd[:, 3 + n])
 
     # Combine to form paramSample
     pumpSplit = np.split(pump, numWells)
-    param_sample = np.stack([hk, vka])
+    param_sample = np.stack([hk, vka, time])
     for i in range(numWells):
         param_sample = np.append(param_sample, pumpSplit[i], axis=0)
 
@@ -51,11 +64,14 @@ def genParamSamples(hk_min, hk_max, vka_min, vka_max, numWells, pump_min, pump_m
 
 
 # Plot settings
-plotContours = False
-plotHydrograph = False
+plotContours = True
+plotHydrograph = True
 
 # Delete modflow files after use?
 deleteFiles = True
+
+# Save output?
+saveOutput = True
 
 # Parameter sample inputs
 hk_min = 1.e-3
@@ -65,7 +81,7 @@ vka_max = 1.e-2
 numWells = 2
 pump_min = -50000.
 pump_max = -3000.
-sampleSize = 500
+sampleSize = 5
 
 # Fixed Parameter Definitions
 # Model domain and grid definition
@@ -84,7 +100,7 @@ sy = 2.5e-1
 ss = 4.e-7
 laytyp = 1  # 1 = unconfined, 0 = confined
 hdry = 0    # dry cell head set to this number
-mxiter = 200
+mxiter = 300
 hclose = 1e-1
 
 # Variables for the BAS package
@@ -92,9 +108,10 @@ ibound = np.ones((nlay, nrow, ncol), dtype=np.int32)    # Not sure if GW uses 0 
 strt = 1000 * np.ones((nlay, nrow, ncol), dtype=np.float32)     # Starting head
 
 # Time step parameters
-nper = 1
-perlen = [3650]
-nstp = 100
+nper = 1    # number of stress periods
+perlen_max = 3000     # length of stress period
+perlen_min = 10
+nstp = 500      # Number of time steps per stress period
 steady = [False]
 
 # Well locations
@@ -107,13 +124,14 @@ spd = {(0, 0): ['print head', 'save head']}
 
 # Get variable inputs
 samples = genParamSamples(hk_min=hk_min, hk_max=hk_max,vka_min=vka_min, vka_max=vka_max, numWells=numWells,
-                          pump_min=pump_min, pump_max=-pump_max, sampleSize=sampleSize)
+                          pump_min=pump_min, pump_max=-pump_max, time_min=perlen_min, time_max=perlen_max, sampleSize=sampleSize)
 
 # Define output parameters for each run
 modflow_success = []
 head_object = []
 head_data1 = np.zeros([sampleSize, nstp])
 head_data2 = np.zeros([sampleSize, nstp])
+timeSeries = np.zeros([sampleSize, nstp])
 
 # Get date and setup saving
 datetimeStr = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -135,6 +153,9 @@ for i in range(sampleSize):
     hk = samples['hk'][i]
     vka = samples['vka'][i]
 
+    # Get perlen sample
+    perlen = samples['time'][i]
+
     # Flopy objects
     mf = flopy.modflow.Modflow(model_name, exe_name='./mf2005dbl')
     dis = flopy.modflow.ModflowDis(mf, nlay, nrow, ncol, delr=delr, delc=delc,
@@ -153,10 +174,20 @@ for i in range(sampleSize):
     success, modflow_output = mf.run_model(silent=True, pause=False, report=True)
     modflow_success.append(success)
 
+    # Create MODFLOW output file if there was an error
+    if not success:
+        file = open('modflow_output' + str(i) + '.txt', 'w')
+        for n in modflow_output:
+            file.write(n + '\n')
+        raise Warning('MODFLOW did not terminate normally.')
+
+
     # Create the headfile object
     headobj = bf.HeadFile(model_name+'.hds')
     head_object.append(headobj)
-    time = headobj.get_times()
+
+    # Save time series
+    timeSeries[i, :] = headobj.get_times()
 
     # Get hydrograph data
     ts1 = headobj.get_ts(wpt1)
@@ -182,7 +213,7 @@ for i in range(sampleSize):
         extent = (delr/2., Lx - delr/2., delc/2., Ly - delc/2.)
 
         # Make the plots
-        mytimes = [time[-1]]
+        mytimes = timeSeries[-1]
         for iplot, t in enumerate(mytimes):
             head = headobj.get_data(totim=t)
 
@@ -200,12 +231,7 @@ for i in range(sampleSize):
                 mfc='black'
             plt.savefig('contour' + str(i) + '.pdf')
 
-    # Create MODFLOW output file if there was an error
-    if not success:
-        file = open('modflow_output' + str(i) + '.txt', 'w')
-        for n in modflow_output:
-            file.write(n + '\n')
-        raise Warning('MODFLOW did not terminate normally.')
+
 
     # Write hydrograph data to array
     head_data1[i, :] = ts1[:, 1]
@@ -223,10 +249,11 @@ for i in range(sampleSize):
         os.remove(model_name + '.wel')
 
     # Save output in .mat file
-    outputDic = dict(zip(['head_data1', 'head_data2', 'time', 'modflow_success'],
-                         [head_data1, head_data2, time, modflow_success]))
-    outputDic.update(samples)
-    io.savemat('modflowData' + datetimeStr, outputDic)
+    if saveOutput:
+        outputDic = dict(zip(['head_data1', 'head_data2', 'timeSeries', 'modflow_success'],
+                             [head_data1, head_data2, timeSeries, modflow_success]))
+        outputDic.update(samples)
+        io.savemat('modflowData' + datetimeStr, outputDic)
 
 
 
