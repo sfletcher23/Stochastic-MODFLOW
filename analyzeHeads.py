@@ -49,45 +49,25 @@ if paramInput or paramReadFile:
 
 
 # Write function to generate range of inputs for hk, vka, pumping rate in each well using latin hypercube sampling
-def genParamSamples(numWells, sampleSize, hk_min=hk, hk_max=hk, vka_min=vka, vka_max=vka, sy_min=sy, sy_max=sy):
-    # Generate list of all paramters
-    params_in_sample = ['hk', 'vka', 'time']
-    for n in range(numWells):
-        params_in_sample.append('pump_rate_' + str(n + 1))
+def genParamSamples(sampleSize, **kwargs):
+    # kwargs contains parameters for LHS sampling. Each parameter is an array containing two
+    # values: the min paramter value and the max parameter value
 
     # Generate LHS samples
-    numParam = np.size(params_in_sample)
+    numParam = len(kwargs)
     lhd = lhs(numParam, samples=sampleSize)
 
-    # Generate arrays of hk and vka
-    loc = hk_min
-    scale = hk_max - hk_min
-    hk = uniform(loc=loc, scale=scale).ppf(lhd[:, 0])
-    loc = vka_min
-    scale = vka_max - vka_min
-    vka = uniform(loc=loc, scale=scale).ppf(lhd[:, 1])
+    # Loop through parameters, use LHS values to generate parameter samples
+    params = {}
+    i = 0
+    for key, value in kwargs.items():
+        loc = value[0]
+        scale = value[1] - value[0]
+        sample = uniform(loc=loc, scale=scale).ppf(lhd[:, i])
+        params[key] = sample
+        i += 1
 
-    # Generate arrays of time (length of stress period)
-    loc = time_min
-    scale = time_max - time_min
-    time = uniform(loc=loc, scale=scale).ppf(lhd[:, 2])
-
-    # Generate arrays of pumping rate
-    pump = np.zeros([numWells, sampleSize])
-    loc = pump_min
-    scale = pump_max - pump_min
-    for n in range(numWells):
-        pump[n, :] = uniform(loc=loc, scale=scale).ppf(lhd[:, 3 + n])
-
-    # Combine to form paramSample
-    pumpSplit = np.split(pump, numWells)
-    param_sample = np.stack([hk, vka, time])
-    for i in range(numWells):
-        param_sample = np.append(param_sample, pumpSplit[i], axis=0)
-
-    # Create dictionary with samples for each parameter
-    params = dict(zip(params_in_sample, param_sample))
-
+        # params is a dictionary where keys are parameter names and values are arrays of samples
     return params
 
 
