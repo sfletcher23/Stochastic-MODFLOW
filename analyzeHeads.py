@@ -24,7 +24,7 @@ import pickle
 # Script Run paramters
 
 # Plot settings
-plotContours = True
+plotContours = False
 plotHydrograph = True
 modflowSilent = True
 pumpingCosts = False
@@ -33,17 +33,17 @@ pumpingCosts = False
 deleteFiles = True
 
 # Save output?
-saveOutput = False
+saveOutput = True
 
 # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
-paramInput = True
+paramInput = False
 paramReadFile = False
 if paramInput and paramReadFile:
     raise NameError('Only one type of parameter input allowed')
 
 
 # Sample size (number of MODFLOW runs for different input parameters)
-sampleSize = 1
+sampleSize = 3
 if paramInput or paramReadFile:
     sampleSize = 1
 
@@ -67,7 +67,7 @@ def genParamSamples(sampleSize, **kwargs):
         params[key] = sample
         i += 1
 
-        # params is a dictionary where keys are parameter names and values are arrays of samples
+    # params is a dictionary where keys are parameter names and values are arrays of samples
     return params
 
 
@@ -75,44 +75,34 @@ def genParamSamples(sampleSize, **kwargs):
 electricityCost = 0.12  # $/kWh
 pumpEfficiency = 0.80
 
-
-
-# MODFLOW input parameters
-numWells = 2
-
-# Parameter sample ranges
+# Parameter sample default / input
 hk = 1.7e-2
 vka = hk/10
-pump_rate_1 = -10000
-pump_rate_2 = -5000
-perlen = 365
+sy = .25
+ss = 4.e-7*10
 
-
-# Parameter sample ranges
+# Parameter ranges for sampling
 hk_min = 1.e-3
 hk_max = 1.
 vka_min = 1.e-3
 vka_max = 1.e-2
-pump_min = -50000.
-pump_max = -3000.
-perlen_max = 3000     # length of stress period
-perlen_min = 10
+sy_min = .1
+sy_max = .3
 
 # Get/sample variable inputs
 if paramReadFile:
     with open('sampleDict.txt', 'rb') as handle:
         samples = pickle.loads(handle.read())
 elif paramInput:
-    samples = {'hk': [hk], 'vka': [vka], 'pump_rate_1': [pump_rate_1], 'pump_rate_2': [pump_rate_2], 'time': [perlen]}
+    samples = {'hk': [hk], 'vka': [vka]}
 else:
-    samples = genParamSamples(hk_min=hk_min, hk_max=hk_max,vka_min=vka_min, vka_max=vka_max, numWells=numWells,
-                          pump_min=pump_min, pump_max=-pump_max, time_min=perlen_min, time_max=perlen_max, sampleSize=sampleSize)
+    samples = genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], sy=[sy_min, sy_max])
 
 # Write samples to text file
 with open('sampleDict.txt', 'wb') as handle:
   pickle.dump(samples, handle)
 
-for keys,values in samples.items():
+for keys, values in samples.items():
     print(keys)
     print(values)
 
@@ -130,26 +120,32 @@ delr = Lx / ncol
 delc = Ly / nrow
 delv = (ztop - zbot) / nlay
 botm = np.linspace(ztop, zbot, nlay + 1)
-sy = .25
-ss = 4.e-7*10
 laytyp = 1  # 1 = unconfined, 0 = confined
 hdry = 0    # dry cell head set to this number
 mxiter = 300
 hclose = 1e-1
+perlen = 365
 
 # Variables for the BAS package
 ibound = np.ones((nlay, nrow, ncol), dtype=np.int32)    # Not sure if GW uses 0 or 1
 strt = 1000 * np.ones((nlay, nrow, ncol), dtype=np.float32)     # Starting head
 
 # Time step parameters
-nper = 5    # number of stress periods
+nper = 30    # number of stress periods
 nstp = 365      # Number of time steps per stress period
-steady = [False, False, False, False, False]
-pumpingOn = [True, True, True, False, False]
+steady = [False] * nper
+pumpingOn = [1] * nper
 
-# Well locations
-wpt1 = (0, 20-1, 37-1)
-wpt2 = (0, 37-1, 18-1)
+# Well parameters
+numWells = 3
+pump_rate = [-10000, -5000, - 7000]
+well_loc = [[0, 20-1, 37-1], [0, 37-1, 18-1], [0, 5-1, 10-1]]
+# check that number of pumpnig rates = number of wells
+if not len(pump_rate) == numWells:
+    raise NameError('Number of pumping rates must equal number of wells')
+# check that number of locations = number of wells
+if not len(well_loc) == numWells:
+    raise NameError('Number of well locations must equal number of wells')
 
 # Output control
 spd = {(0, 0): ['print head', 'save head']}
@@ -158,12 +154,14 @@ spd = {(0, 0): ['print head', 'save head']}
 # Define output parameters for each run
 modflow_success = []
 head_object = []
-head_data1 = np.zeros([sampleSize, nstp*nper])
-head_data2 = np.zeros([sampleSize, nstp*nper])
 timeSeries = np.zeros([sampleSize, nstp*nper])
 
 # Get date and setup saving
 datetimeStr = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+# Initialize output dictionary
+if saveOutput:
+    output = {}
     
 # Run MODFLOW for each of the paramter samples
 for i in range(sampleSize):
@@ -172,27 +170,31 @@ for i in range(sampleSize):
     model_name = 'model' + str(i)
 
     # Get pumping rate same and make stress period dictionary:
-    pumping_rate1 = samples['pump_rate_1'][i]
-    pumping_rate2 = samples['pump_rate_2'][i]
-    wel_sp1 = [0, 19, 36, pumping_rate1] # Remember to use zero-based layer, row, column indices!
-    wel_sp2 = [0, 36, 17, pumping_rate2]
+    well_sp_data = {}
+    for n in range(numWells):
+        well_sp_data[n] = well_loc[n][:]
+        well_sp_data[n].append(pump_rate[n])  # Remember to use zero-based layer, row, column indices
+
+
     stress_period_data = {}
     for t in range(nper):
-        tempWell1 = wel_sp1[:]
-        tempWell2 = wel_sp2[:]
-        if not pumpingOn[t]:
-            tempWell1[-1] = 0
-            tempWell2[-1] = 0
-        stress_period_data[t] = [tempWell1, tempWell2]
+        stress_period_data[t] = []
+        for n in range(numWells):
+            temp_sp_data = well_sp_data[n][:]
+            temp_sp_data[-1] *= pumpingOn[t]
+            stress_period_data[t].append(temp_sp_data)
 
-    # Get hydraulic conductivty sample
-    hk = samples['hk'][i]
-    vka = samples['vka'][i]
+    # Get hydraulic conductivty, specific yield samples
+    if 'hk' in samples:
+        hk = samples['hk'][i]
+    if 'vka' in samples:
+        vka = samples['vka'][i]
+    if 'sy' in samples:
+        sy = samples['sy'][i]
 
     # Get perlen sample
-    perlen = samples['time'][i]
-    if nper > 1:
-        perlen = [perlen] * nper
+    # if nper > 1:
+    #     perlen = [perlen] * nper
 
     # Flopy objects
     mf = flopy.modflow.Modflow(model_name, exe_name='./mf2005dbl')
@@ -228,47 +230,47 @@ for i in range(sampleSize):
     timeSeries[i, :] = headobj.get_times()
 
     # Get hydrograph data
-    ts1 = headobj.get_ts(wpt1)
-    ts2 = headobj.get_ts(wpt2)
+    headData = {}
+    for n in range(numWells):
+        headData[n] = headobj.get_ts(tuple(well_loc[n]))
 
     # Calculate pumping costs
     if pumpingCosts:
-        mgh1 = 1000 * 9.8 * (ztop - ts1[:, 1])   # 1000 kg per m^3 water * g * drawdown --> Joules per m^3
-        mgh2 = 1000 * 9.8 * (ztop - ts2[:, 1])
-        kWhperJ = 2.77778e-7
-        pumpCostsWell1 = mgh1 * kWhperJ * 1/pumpEfficiency * electricityCost #* -pumping_rate1
-        pumpCostsWell2 = mgh2 * kWhperJ * 1/pumpEfficiency * electricityCost #* -pumping_rate2
-        pumpOnTimes1 = np.zeros_like(ts1[:, 1])
-        pumpOnTimes2 = np.zeros_like(ts2[:, 1])
-        #for t in range(len(ts1[:,1])):
-        for index, item in enumerate(pumpingOn):
-            if item:
-                pumpOnTimes1[index * nstp: index * nstp + nstp] = 1
-                pumpOnTimes2[index * nstp: index * nstp + nstp] = 1
-        pumpCostsWell1 = pumpCostsWell1 * pumpOnTimes1
-        pumpCostsWell2 = pumpCostsWell2 * pumpOnTimes2
+        kWhperJ = 2.77778e-7  # Convert from Joules to kWh
+        mgh = {}
+        pumpCosts = {}
+        for n in range(numWells):
+            mgh = 1000 * 9.8 * (ztop - headData[n][:, 1])  # 1000 kg per m^3 water * g * drawdown --> Joules per m^3
+            pumpCosts[n] = mgh * kWhperJ * 1/pumpEfficiency * electricityCost  #* -pump_rate_1
+            pumpOnTimes = np.zeros_like(headData[n][:, 1])
+            for index, item in enumerate(pumpingOn):
+                if item == 1:
+                    pumpOnTimes[index * nstp: index * nstp + nstp] = 1
+            pumpCosts[n] *= pumpOnTimes
+
 
 
     # Plot hydrograph: head versus time
     if plotHydrograph:
         fig1 = plt.figure()
         ax1 = fig1.add_subplot(111)
-        ttl = 'Hydrograph: K = {:.2e} , vK = {:.2e}, ss = {:.2e}, sy = {:.2e}'.format(hk,vka, ss, sy)
+        ttl = 'Hydrograph: K = {:.2e} , vK = {:.2e}, ss = {:.2e}, sy = {:.2e}'.format(hk, vka, ss, sy)
         ax1.set_title(ttl)
-        ax1.set_xlabel('time [days]')
+        ax1.set_xlabel('time [years]')
         ax1.set_ylabel('head')
         ax1.set_ylim(-1,1000)
-        ax1.plot(ts1[:, 0], ts1[:, 1], label='Well 1: Pump rate = ' + str(round(pumping_rate1,3)) + ' cm/d')
-        ax1.plot(ts2[:, 0], ts2[:, 1], label='Well 2: Pump rate = ' + str(round(pumping_rate2,3)) + ' cm/d')
+        for n in range(numWells):
+            ax1.plot(headData[n][:, 0]/365, headData[n][:, 1], label='Well {}: Pump rate = {} m^3/d'.format(n, pump_rate[n]))
         plt.legend()
 
         if pumpingCosts:
             ax2 = ax1.twinx()
-            ax2.plot(ts1[:, 0], pumpCostsWell1, '--',  label='Well 1 Pumping costs')
-            ax2.plot(ts2[:, 0], pumpCostsWell2, '--',  label='Well 2 Pumping costs')
-            ax2.set_ylabel('Pumping costs [$/day]')
+            for n in range(numWells):
+                ax2.plot(headData[n][:, 0]/365, pumpCosts[n], '--',  label='Well {} Pumping costs'.format(n))
+            ax2.set_ylabel('Pumping costs [$/m^3]')
 
         plt.legend()
+        plt.show()
         fig1.savefig('hydrograph' + str(i) + '.pdf')
 
     # Plot contour map
@@ -298,12 +300,12 @@ for i in range(sampleSize):
         plt.clabel(CS, inline=1, fontsize=10, fmt='%1.1f', zorder=11)
         plt.colorbar()
         plt.savefig('contour' + str(i) + '.pdf')
+        plt.show()
 
-
-
-    # Write hydrograph data to array
-    head_data1[i, :] = ts1[:, 1]
-    head_data2[i, :] = ts2[:, 1]
+    # Calculate maximum drawdown across all wells
+    endDrawdowns = [x[-1][1] for ind, x in enumerate(headData.values())]
+    maxDrawdownWell = np.argmin(endDrawdowns)
+    maxDrawdown = min(endDrawdowns)
 
     if deleteFiles:
         os.remove(model_name + '.bas')
@@ -318,10 +320,21 @@ for i in range(sampleSize):
 
     # Save output in .mat file
     if saveOutput:
-        outputDic = dict(zip(['head_data1', 'head_data2', 'timeSeries', 'modflow_success'],
-                             [head_data1, head_data2, timeSeries, modflow_success]))
-        outputDic.update(samples)
-        io.savemat('modflowData' + datetimeStr, outputDic)
+        output[i] = dict(zip(['timeSeries', 'modflow_success', 'hk', 'vka', 'sy', 'maxDrawdown', 'maxDrawdownWell'],
+                             [timeSeries, modflow_success, hk, vka, sy, maxDrawdown, maxDrawdownWell]))
+        for n in range(numWells):
+            output[i]['head_well_{}'.format(n)] = headData[n][:, 1]
+
+# print maxDrawdown array
+maxDrawdownAll = [v['maxDrawdown'] for k, v in output.items()]
+maxDrawdownWellAll = [v['maxDrawdownWell'] for k, v in output.items()]
+print([maxDrawdownAll, maxDrawdownWellAll])
+
+# Write output to text file
+with open('output_{}.txt'.format(datetimeStr), 'wb') as handle:
+    pickle.dump(output, handle)
+
+        # io.savemat('modflowData' + datetimeStr, output)
 
 
 
