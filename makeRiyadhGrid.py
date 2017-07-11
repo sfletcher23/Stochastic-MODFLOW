@@ -91,7 +91,8 @@ def build_lpf_file(mf, samples = None):
 
     lpf = flopy.modflow.ModflowLpf(mf, hk=hk, vka=vka, sy=sy, ss=ss, laytyp=laytyp, hdry=hdry)
 
-    return lpf
+    return lpf, hk, vka, sy
+
 
 def build_pcg_file(mf):
 

@@ -15,12 +15,16 @@ import scipy.io as io
 import datetime
 import pickle
 import makeRiyadhGrid
+import plotFunctions
 flopypth = os.path.join('..', '..', 'flopy')
 if flopypth not in sys.path:
     sys.path.append(flopypth)
 
 
 # Script Run paramters
+
+# Run MODFLOW?
+runMODFLOW = False
 
 # Plot settings
 plotContours = False
@@ -33,6 +37,7 @@ deleteFiles = True
 
 # Save output?
 saveOutput = True
+numHeadObjSave = 2
 
 
 
@@ -139,7 +144,7 @@ if saveOutput:
     output = {}
 modflow_success = []
 head_object = []
-timeSeries = np.zeros([sampleSize, nstp*nper])
+timeSeries = np.zeros(nstp*nper)
     
 # Loop over each of the parameter samples
 for i in range(sampleSize):
@@ -148,7 +153,7 @@ for i in range(sampleSize):
     samplesThisRun = {k: v[i] for k, v in samples.items()}
 
     # Flopy LPF object
-    lpf = makeRiyadhGrid.build_lpf_file(mf, samples=samplesThisRun)
+    [lpf, hk, vka, sy] = makeRiyadhGrid.build_lpf_file(mf, samples=samplesThisRun)
 
     # Write the model input files
     mf.write_input()
@@ -170,12 +175,8 @@ for i in range(sampleSize):
     head_object.append(headobj)
 
     # Save time series
-    timeSeries[i, :] = headobj.get_times()
-
-    # Get hydrograph data
-    headData = {}
-    for n in range(numWells):
-        headData[n] = headobj.get_ts(tuple(well_loc[n]))
+    if i == 0:
+        timeSeries = headobj.get_times()
 
     # Calculate pumping costs
     if pumpingCosts:
@@ -195,26 +196,29 @@ for i in range(sampleSize):
 
     # Plot hydrograph: head versus time
     if plotHydrograph:
-        fig1 = plt.figure()
-        ax1 = fig1.add_subplot(111)
-        ttl = 'Hydrograph: K = {:.2e} , vK = {:.2e}, sy = {:.2e}'.format(samplesThisRun['hk'], samplesThisRun['vka'], samplesThisRun['sy'])
-        ax1.set_title(ttl)
-        ax1.set_xlabel('time [years]')
-        ax1.set_ylabel('head')
-        ax1.set_ylim(-1,1000)
-        for n in range(numWells):
-            ax1.plot(headData[n][:, 0]/365, headData[n][:, 1], label='Well {}: Pump rate = {} m^3/d'.format(n, pump_rate[n]))
-        plt.legend()
+        plotFunctions.hydrograph(headobj, timeSeries, hk, vka, sy, well_loc, numWells, pump_rate)
 
-        if pumpingCosts:
-            ax2 = ax1.twinx()
-            for n in range(numWells):
-                ax2.plot(headData[n][:, 0]/365, pumpCosts[n], '--',  label='Well {} Pumping costs'.format(n))
-            ax2.set_ylabel('Pumping costs [$/m^3]')
 
-        plt.legend()
-        plt.show()
-        fig1.savefig('hydrograph' + str(i) + '.pdf')
+        # fig1 = plt.figure()
+        # ax1 = fig1.add_subplot(111)
+        # ttl = 'Hydrograph: K = {:.2e} , vK = {:.2e}, sy = {:.2e}'.format(samplesThisRun['hk'], samplesThisRun['vka'], samplesThisRun['sy'])
+        # ax1.set_title(ttl)
+        # ax1.set_xlabel('time [years]')
+        # ax1.set_ylabel('head')
+        # ax1.set_ylim(-1,1000)
+        # for n in range(numWells):
+        #     ax1.plot(headData[n][:, 0]/365, headData[n][:, 1], label='Well {}: Pump rate = {} m^3/d'.format(n, pump_rate[n]))
+        # plt.legend()
+        #
+        # if pumpingCosts:
+        #     ax2 = ax1.twinx()
+        #     for n in range(numWells):
+        #         ax2.plot(headData[n][:, 0]/365, pumpCosts[n], '--',  label='Well {} Pumping costs'.format(n))
+        #     ax2.set_ylabel('Pumping costs [$/m^3]')
+        #
+        # plt.legend()
+        # plt.show()
+        # fig1.savefig('hydrograph' + str(i) + '.pdf')
 
     # Plot contour map
     if plotContours:
@@ -224,7 +228,7 @@ for i in range(sampleSize):
         extent = (delr/2., Lx - delr/2., delc/2., Ly - delc/2.)
 
         # Make the plots
-        mytimes = timeSeries[i, -1]
+        mytimes = timeSeries[-1]
         if not isinstance(timeSeries, list):
             head = headobj.get_data(totim=mytimes)
             iplot = 0
@@ -264,7 +268,7 @@ for i in range(sampleSize):
     # Save output in .mat file
     if saveOutput:
         output[i] = dict(zip(['timeSeries', 'modflow_success', 'hk', 'vka', 'sy', 'maxDrawdown', 'maxDrawdownWell'],
-                             [timeSeries, modflow_success, samplesThisRun[hk], samplesThisRun[vka], samplesThisRun[sy], maxDrawdown, maxDrawdownWell]))
+                             [timeSeries, modflow_success, hk, vka, sy, maxDrawdown, maxDrawdownWell]))
         for n in range(numWells):
             output[i]['head_well_{}'.format(n)] = headData[n][:, 1]
 
