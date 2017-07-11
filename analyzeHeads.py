@@ -1,13 +1,10 @@
-
 #Import packages
+
 import numpy as np
 import scipy as sp
 import matplotlib as ml
 import os
 import sys
-flopypth = os.path.join('..', '..', 'flopy')
-if flopypth not in sys.path:
-    sys.path.append(flopypth)
 import flopy
 import flopy.utils.binaryfile as bf
 import subprocess
@@ -18,7 +15,9 @@ import scipy.io as io
 import datetime
 import pickle
 import makeRiyadhGrid
-
+flopypth = os.path.join('..', '..', 'flopy')
+if flopypth not in sys.path:
+    sys.path.append(flopypth)
 
 
 # Script Run paramters
@@ -37,18 +36,7 @@ saveOutput = True
 
 
 
-# Sampling setup and options
-
-# Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
-paramInput = False
-paramReadFile = False
-if paramInput and paramReadFile:
-    raise NameError('Only one type of parameter input allowed')
-
-# Sample size (number of MODFLOW runs for different input parameters)
-sampleSize = 1
-if paramInput or paramReadFile:
-    sampleSize = 1
+#Sampling setup and options
 
 # Parameter ranges for sampling
 hk_min = 1.97e-3    # m/day
@@ -58,22 +46,29 @@ vka_max = hk_max / 10
 sy_min = 1.e-1
 sy_max = 3.e-1
 
+# Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
+paramInput = False
+paramReadFile = False
+if paramInput and paramReadFile:
+    raise NameError('Only one type of parameter input allowed')
+
+# Sample size (number of MODFLOW runs for different input parameters)
+sampleSize = 2
+if paramInput or paramReadFile:
+    sampleSize = 1
+
 # Get/sample variable inputs
 if paramReadFile:
     with open('sampleDict.txt', 'rb') as handle:
         samples = pickle.loads(handle.read())
 elif paramInput:
-    samples = {'hk': [hk], 'vka': [vka]}
+    samples = {}
 else:
     samples = makeRiyadhGrid.genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], sy=[sy_min, sy_max])
 
 # Write samples to text file
 with open('sampleDict.txt', 'wb') as handle:
   pickle.dump(samples, handle)
-
-for keys, values in samples.items():
-    print(keys)
-    print(values)
 
 
 
@@ -82,12 +77,14 @@ electricityCost = 0.12  # $/kWh
 pumpEfficiency = 0.80
 
 
+
 # Time step parameters
 perlen = 365
 nper = 30    # number of stress periods
 nstp = 365      # Number of time steps per stress period
 steady = [False] * nper
 pumpingOn = [1] * nper
+
 
 
 # Well parameters
@@ -102,58 +99,56 @@ if not len(pump_rate) == numWells:
 if not len(well_loc) == numWells:
     raise NameError('Number of well locations must equal number of wells')
 
-# Output control
-spd = {(0, 0): ['print head', 'save head']}
 
 
-# Define output parameters for each run
-modflow_success = []
-head_object = []
-timeSeries = np.zeros([sampleSize, nstp*nper])
+# Generate static MODFLOW input files
+
+# Name model
+model_name = 'mod'
+
+# Stress period dictionary and well, oc objects
+well_sp_data = {}
+for n in range(numWells):
+    well_sp_data[n] = well_loc[n][:]
+    well_sp_data[n].append(pump_rate[n])  # Remember to use zero-based layer, row, column indices
+
+stress_period_data = {}
+for t in range(nper):
+    stress_period_data[t] = []
+    for n in range(numWells):
+        temp_sp_data = well_sp_data[n][:]
+        temp_sp_data[-1] *= pumpingOn[t]
+        stress_period_data[t].append(temp_sp_data)
+
+# MODFLOW input files
+mf = flopy.modflow.Modflow(model_name, exe_name='./mf2005dbl')
+[dis, bas, nper, nstp, perlen] = makeRiyadhGrid.build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
+pcg = makeRiyadhGrid.build_pcg_file(mf)
+wel = flopy.modflow.ModflowWel(mf, stress_period_data=stress_period_data)
+oc = flopy.modflow.ModflowOc(mf, stress_period_data={(0, 0): ['print head', 'save head']})  # output control
+
+
+
+# For each sample, generate LPF file and run MODFLOW
 
 # Get date and setup saving
 datetimeStr = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-# Initialize output dictionary
+# Initialize output dictionary and output parameters
 if saveOutput:
     output = {}
+modflow_success = []
+head_object = []
+timeSeries = np.zeros([sampleSize, nstp*nper])
     
-# Run MODFLOW for each of the paramter samples
+# Loop over each of the parameter samples
 for i in range(sampleSize):
 
-    # Name model this run
-    model_name = 'model' + str(i)
+    # Get hydraulic conductivty, specific yield samples for this iteration
+    samplesThisRun = {k: v[i] for k, v in samples.items()}
 
-    # Get hydraulic conductivty, specific yield samples
-    if 'hk' in samples:
-        hk = samples['hk'][i]
-    if 'vka' in samples:
-        vka = samples['vka'][i]
-    if 'sy' in samples:
-        sy = samples['sy'][i]
-
-    # Flopy objects
-    mf = flopy.modflow.Modflow(model_name, exe_name='./mf2005dbl')
-    [dis, bas, nper, nstp, perlen] = makeRiyadhGrid.build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
-    lpf = makeRiyadhGrid.build_lpf_file(mf)
-    pcg = makeRiyadhGrid.build_pcg_file(mf)
-
-    # Stress period dictionary and well, oc objects
-    well_sp_data = {}
-    for n in range(numWells):
-        well_sp_data[n] = well_loc[n][:]
-        well_sp_data[n].append(pump_rate[n])  # Remember to use zero-based layer, row, column indices
-
-    stress_period_data = {}
-    for t in range(nper):
-        stress_period_data[t] = []
-        for n in range(numWells):
-            temp_sp_data = well_sp_data[n][:]
-            temp_sp_data[-1] *= pumpingOn[t]
-            stress_period_data[t].append(temp_sp_data)
-
-    wel = flopy.modflow.ModflowWel(mf, stress_period_data=stress_period_data)
-    oc = flopy.modflow.ModflowOc(mf, stress_period_data=spd)
+    # Flopy LPF object
+    lpf = makeRiyadhGrid.build_lpf_file(mf, samples=samplesThisRun)
 
     # Write the model input files
     mf.write_input()
@@ -202,7 +197,7 @@ for i in range(sampleSize):
     if plotHydrograph:
         fig1 = plt.figure()
         ax1 = fig1.add_subplot(111)
-        ttl = 'Hydrograph: K = {:.2e} , vK = {:.2e}, ss = {:.2e}, sy = {:.2e}'.format(hk, vka, ss, sy)
+        ttl = 'Hydrograph: K = {:.2e} , vK = {:.2e}, sy = {:.2e}'.format(samplesThisRun['hk'], samplesThisRun['vka'], samplesThisRun['sy'])
         ax1.set_title(ttl)
         ax1.set_xlabel('time [years]')
         ax1.set_ylabel('head')
@@ -269,7 +264,7 @@ for i in range(sampleSize):
     # Save output in .mat file
     if saveOutput:
         output[i] = dict(zip(['timeSeries', 'modflow_success', 'hk', 'vka', 'sy', 'maxDrawdown', 'maxDrawdownWell'],
-                             [timeSeries, modflow_success, hk, vka, sy, maxDrawdown, maxDrawdownWell]))
+                             [timeSeries, modflow_success, samplesThisRun[hk], samplesThisRun[vka], samplesThisRun[sy], maxDrawdown, maxDrawdownWell]))
         for n in range(numWells):
             output[i]['head_well_{}'.format(n)] = headData[n][:, 1]
 

@@ -67,7 +67,8 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
 
 
 
-def build_lpf_file(mf, **kwargs):
+def build_lpf_file(mf, samples = None):
+# samples is a dictionary with a single sample for each input paramter
 
     laytyp = 1  # 1 = unconfined, 0 = confined
     hdry = 0  # dry cell head set to this number
@@ -78,7 +79,7 @@ def build_lpf_file(mf, **kwargs):
     sy = .25
     ss = 4.e-7 * 10
 
-    for key, value in kwargs.items():
+    for key, value in samples.items():
         if key == 'hk':
             hk = value
         elif key == 'vka':
