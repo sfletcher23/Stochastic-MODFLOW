@@ -19,3 +19,7 @@ mf2005dbl
 *.ibo
 *.txt
 *.pdf
+
+# Python ignores
+*.pyc
+__pycache__
