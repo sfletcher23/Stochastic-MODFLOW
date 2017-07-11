@@ -16,9 +16,9 @@ import shutil
 from scipy.stats import uniform
 import scipy.io as io
 import datetime
-from scipy.stats import uniform
-from pyDOE import *
 import pickle
+import makeRiyadhGrid
+
 
 
 # Script Run paramters
@@ -35,59 +35,28 @@ deleteFiles = True
 # Save output?
 saveOutput = True
 
+
+
+# Sampling setup and options
+
 # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
 paramInput = False
 paramReadFile = False
 if paramInput and paramReadFile:
     raise NameError('Only one type of parameter input allowed')
 
-
 # Sample size (number of MODFLOW runs for different input parameters)
-sampleSize = 3
+sampleSize = 1
 if paramInput or paramReadFile:
     sampleSize = 1
 
-
-# Write function to generate range of inputs for hk, vka, pumping rate in each well using latin hypercube sampling
-def genParamSamples(sampleSize, **kwargs):
-    # kwargs contains parameters for LHS sampling. Each parameter is an array containing two
-    # values: the min paramter value and the max parameter value
-
-    # Generate LHS samples
-    numParam = len(kwargs)
-    lhd = lhs(numParam, samples=sampleSize)
-
-    # Loop through parameters, use LHS values to generate parameter samples
-    params = {}
-    i = 0
-    for key, value in kwargs.items():
-        loc = value[0]
-        scale = value[1] - value[0]
-        sample = uniform(loc=loc, scale=scale).ppf(lhd[:, i])
-        params[key] = sample
-        i += 1
-
-    # params is a dictionary where keys are parameter names and values are arrays of samples
-    return params
-
-
-# Pumping cost paramters
-electricityCost = 0.12  # $/kWh
-pumpEfficiency = 0.80
-
-# Parameter sample default / input
-hk = 1.7e-2
-vka = hk/10
-sy = .25
-ss = 4.e-7*10
-
 # Parameter ranges for sampling
-hk_min = 1.e-3
-hk_max = 1.
-vka_min = 1.e-3
-vka_max = 1.e-2
-sy_min = .1
-sy_max = .3
+hk_min = 1.97e-3    # m/day
+hk_max = 8.34e-3
+vka_min = hk_min / 10
+vka_max = hk_max / 10
+sy_min = 1.e-1
+sy_max = 3.e-1
 
 # Get/sample variable inputs
 if paramReadFile:
@@ -96,7 +65,7 @@ if paramReadFile:
 elif paramInput:
     samples = {'hk': [hk], 'vka': [vka]}
 else:
-    samples = genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], sy=[sy_min, sy_max])
+    samples = makeRiyadhGrid.genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], sy=[sy_min, sy_max])
 
 # Write samples to text file
 with open('sampleDict.txt', 'wb') as handle:
@@ -107,39 +76,25 @@ for keys, values in samples.items():
     print(values)
 
 
-# Fixed Parameter Definitions
-# Model domain and grid definition
-Lx = 5000.
-Ly = 1000.
-ztop = 1000.
-zbot = 0.
-nlay = 1
-nrow = 50
-ncol = 50
-delr = Lx / ncol
-delc = Ly / nrow
-delv = (ztop - zbot) / nlay
-botm = np.linspace(ztop, zbot, nlay + 1)
-laytyp = 1  # 1 = unconfined, 0 = confined
-hdry = 0    # dry cell head set to this number
-mxiter = 300
-hclose = 1e-1
-perlen = 365
 
-# Variables for the BAS package
-ibound = np.ones((nlay, nrow, ncol), dtype=np.int32)    # Not sure if GW uses 0 or 1
-strt = 1000 * np.ones((nlay, nrow, ncol), dtype=np.float32)     # Starting head
+# Pumping cost paramters
+electricityCost = 0.12  # $/kWh
+pumpEfficiency = 0.80
+
 
 # Time step parameters
+perlen = 365
 nper = 30    # number of stress periods
 nstp = 365      # Number of time steps per stress period
 steady = [False] * nper
 pumpingOn = [1] * nper
 
+
 # Well parameters
 numWells = 3
 pump_rate = [-10000, -5000, - 7000]
 well_loc = [[0, 20-1, 37-1], [0, 37-1, 18-1], [0, 5-1, 10-1]]
+startingHead = 200
 # check that number of pumpnig rates = number of wells
 if not len(pump_rate) == numWells:
     raise NameError('Number of pumping rates must equal number of wells')
@@ -169,12 +124,25 @@ for i in range(sampleSize):
     # Name model this run
     model_name = 'model' + str(i)
 
-    # Get pumping rate same and make stress period dictionary:
+    # Get hydraulic conductivty, specific yield samples
+    if 'hk' in samples:
+        hk = samples['hk'][i]
+    if 'vka' in samples:
+        vka = samples['vka'][i]
+    if 'sy' in samples:
+        sy = samples['sy'][i]
+
+    # Flopy objects
+    mf = flopy.modflow.Modflow(model_name, exe_name='./mf2005dbl')
+    [dis, bas, nper, nstp, perlen] = makeRiyadhGrid.build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
+    lpf = makeRiyadhGrid.build_lpf_file(mf)
+    pcg = makeRiyadhGrid.build_pcg_file(mf)
+
+    # Stress period dictionary and well, oc objects
     well_sp_data = {}
     for n in range(numWells):
         well_sp_data[n] = well_loc[n][:]
         well_sp_data[n].append(pump_rate[n])  # Remember to use zero-based layer, row, column indices
-
 
     stress_period_data = {}
     for t in range(nper):
@@ -184,26 +152,6 @@ for i in range(sampleSize):
             temp_sp_data[-1] *= pumpingOn[t]
             stress_period_data[t].append(temp_sp_data)
 
-    # Get hydraulic conductivty, specific yield samples
-    if 'hk' in samples:
-        hk = samples['hk'][i]
-    if 'vka' in samples:
-        vka = samples['vka'][i]
-    if 'sy' in samples:
-        sy = samples['sy'][i]
-
-    # Get perlen sample
-    # if nper > 1:
-    #     perlen = [perlen] * nper
-
-    # Flopy objects
-    mf = flopy.modflow.Modflow(model_name, exe_name='./mf2005dbl')
-    dis = flopy.modflow.ModflowDis(mf, nlay, nrow, ncol, delr=delr, delc=delc,
-                                   top=ztop, botm=botm[1:],
-                                   nper=nper, perlen=perlen, nstp=[nstp]*nper, steady=steady)
-    bas = flopy.modflow.ModflowBas(mf, ibound=ibound, strt=strt)
-    lpf = flopy.modflow.ModflowLpf(mf, hk=hk, vka=vka, sy=sy, ss=ss, laytyp=laytyp, hdry=hdry)
-    pcg = flopy.modflow.ModflowPcg(mf, mxiter=mxiter, hclose=hclose)  # This has stuff like iterations for solver
     wel = flopy.modflow.ModflowWel(mf, stress_period_data=stress_period_data)
     oc = flopy.modflow.ModflowOc(mf, stress_period_data=spd)
 
