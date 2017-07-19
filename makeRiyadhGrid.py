@@ -4,34 +4,65 @@ import numpy as np
 import scipy as sp
 import matplotlib as ml
 import flopy
+import pickle
+from flopy.utils.reference import SpatialReference
+from flopy.utils.geometry import Polygon, LineString, Point
+from flopy.export.shapefile_utils import recarray2shp, shp2recarray
+from flopy.utils.modpathfile import PathlineFile, EndpointFile
+from flopy.utils.reference import epsgRef
+import plotFunctions
+
+
 
 def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
 
     # Make row spacings, units in meters
     delr = np.zeros(84)
-    delr[0:13] = 10.E3  # 10 km
-    delr[13:18] = 6.E3
-    delr[18:25] = 3.5E3
-    delr[25:28] = 1.8E3
-    delr[28:45] = 0.8E3
-    delr[45:68] = 1.E3
+    delr[0] = 15.E3
+    delr[1:12] = 10.E3  # 10 km
+    delr[12:15] = 7.E3
+    delr[15:20] = 5.E3
+    delr[20:25] = 3.E3
+    delr[25:28] = 1.5E3
+    delr[28:45] = 0.9E3
+    delr[45:49] = 1.3E3
+    delr[49:52] = 3.4E3
+    delr[52:68] = 1.4E3
+    delr[68:73] = 2.E3
     delr[68:77] = 3.5E3
     delr[73] = 5.E3
     delr[74] = 6.E3
-    delr[75:77] = 7.E3
-    delr[77:84] = 10.E3
+    delr[75:77] = 8.E3
+    delr[77:84] = 13.E3
+    delr = np.flip(delr,0)
     xlength = sum(delr)
 
     # Make column spacings, units in meters
     delc = np.zeros(62)
     delc[0:10] = 10.E3
-    delc[10:14] = 7.E3
-    delc[14:19] = 5.E3
-    delc[19:22] = 2.E3
-    delc[22:50] = 1.E3
+    delc[10:14] = 6.E3
+    delc[14:17] = 4.E3
+    delc[17] = 3.E3
+    delc[18] = 2.E3
+    delc[0:10] = 10.E3
+    delc[10:14] = 6.E3
+    delc[14:17] = 4.E3
+    delc[17] = 3.E3
+    delc[18] = 2.E3
+    delc[19] = 1E3
+    delc[20:31] = 0.7E3
+    delc[31:50] = 1.E3
     delc[50] = 2.E3
     delc[51] = 4.E3
     delc[52] = 6.E3
+    delc[53] = 8.E3
+    delc[54:-1] = 10.E3
+    delc[19] = 1E3
+    delc[20:31] = 0.7E3
+    delc[31:50] = 0.8E3
+    delc[50] = 1.8E3
+    delc[51] = 3.8E3
+    delc[52] = 5.5E3
     delc[53] = 8.E3
     delc[54:-1] = 10.E3
     ylength = sum(delc)
@@ -44,14 +75,6 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     ncol = np.size(delc)
     delv = (ztop - zbot) / nlay
     botm = np.linspace(ztop, zbot, nlay + 1)
-
-
-    # # Time step parameters
-    # perlen = 365
-    # nper = 30  # number of stress periods
-    # nstp = 365  # Number of time steps per stress period
-    # steady = [False] * nper
-
 
     dis = flopy.modflow.ModflowDis(mf, nlay, nrow, ncol, delr=delc, delc=delr,
                                    top=ztop, botm=botm[1:],
@@ -94,6 +117,7 @@ def build_lpf_file(mf, samples = None):
     return lpf, hk, vka, sy
 
 
+
 def build_pcg_file(mf):
 
     mxiter = 300
@@ -103,6 +127,93 @@ def build_pcg_file(mf):
 
     return pcg
 
+
+
+def build_wel_file(mf, sr):
+    # Time step parameters
+    perlen = 365
+    nper = 30  # number of stress periods
+    nstp = 365  # Number of time steps per stress period
+    steady = [False] * nper
+    pumpingOn = [1] * nper
+
+    # Read well location from shapefile
+    shp = 'wells'
+    well_loc = flopy.plot.plotutil.shapefile_get_vertices(shp)
+    wellx = [x[0][0] for x in well_loc]
+    welly = [x[0][1] for x in well_loc]
+
+    [wellxrot, wellyrot] = sr.rotate(wellx[0], welly[0], theta=sr.rotation*-1, xorigin=sr.xll, yorigin=sr.yll)
+    [wellxrot, wellyrot] = sr.rotate(wellx[0] - sr.xll, welly[0] - sr.yll, theta=sr.rotation *-1, xorigin=0, yorigin=0)
+    # [well_loc_r, well_loc_c] = sr.get_rc(wellxrot, wellyrot)
+
+
+    [well_loc_r, well_loc_c] = get_rc(sr, wellxrot, wellyrot)
+
+    # well_loc_r = 51
+    # well_loc_c = 6
+
+    numWells = np.size(wellx)
+    well_loc_array = np.transpose(np.vstack((np.zeros(numWells), well_loc_r, well_loc_c)))
+    well_loc = well_loc_array.astype(int).tolist()
+
+
+    # Read well pumping rates from shapefile
+    wellData= flopy.export.shapefile_utils.shp2recarray(shp)
+    pumpRate_MCMy = [float(x[1]) for x in wellData]
+    pump_rate =  np.asarray(pumpRate_MCMy) * -1 * 1e6 /365
+
+    startingHead = 200
+
+    # check that number of pumpnig rates = number of wells
+    if not len(pump_rate) == numWells:
+        raise NameError('Number of pumping rates must equal number of wells')
+    # check that number of locations = number of wells
+    if not len(well_loc) == numWells:
+        raise NameError('Number of well locations must equal number of wells')
+
+    # Stress period dictionary and well, oc objects
+    well_sp_data = {}
+    for n in range(numWells):
+        well_sp_data[n] = list(well_loc[n][:])
+        well_sp_data[n].append(pump_rate[n])  # Remember to use zero-based layer, row, column indices
+
+    stress_period_data = {}
+    for t in range(nper):
+        stress_period_data[t] = []
+        for n in range(numWells):
+            temp_sp_data = well_sp_data[n][:]
+            temp_sp_data[-1] *= pumpingOn[t]
+            stress_period_data[t].append(temp_sp_data)
+
+    wel = flopy.modflow.ModflowWel(mf, stress_period_data=stress_period_data)
+
+    return wel, numWells, well_loc
+
+
+def get_rc(sr, x, y):
+    """Return the row and column of a point or sequence of points
+    in real-world coordinates.
+
+    Parameters
+    ----------
+    x : scalar or sequence of x coordinates
+    y : scalar or sequence of y coordinates
+
+    Returns
+    -------
+    r : row or sequence of rows (zero-based)
+    c : column or sequence of columns (zero-based)
+    """
+    if np.isscalar(x):
+        c = (np.abs(sr.xcenter - x)).argmin()
+        r = (np.abs(sr.ycenter - y)).argmin()
+    else:
+        xcp = np.array([sr.xcenter] * (len(x)))
+        ycp = np.array([sr.ycenter] * (len(x)))
+        c = (np.abs(xcp - x)).argmin(axis=0)
+        r = (np.abs(ycp - y)).argmin(axis=0)
+    return r, c
 
 
 
@@ -133,5 +244,115 @@ def genParamSamples(sampleSize, **kwargs):
 
 
 
+def build_spatial_reference(mf):
+    from flopy.utils.reference import SpatialReference
+    # Position grid at 22 degrees lat 46 degrees long using UTM 38
+    rotation = 22.3
+    # rotation = 0
+    ll_lat = 22
+    ll_long = 46
+    import utm
+    [easting, northing, zoneNum, zoneLet] = utm.from_latlon(ll_lat, ll_long)
+    sr = SpatialReference(delr=mf.dis.delr, delc=mf.dis.delc, xll=easting, yll=northing, epsg='32638', rotation=rotation)
+    return(mf, sr)
 
+
+
+def buildModel(plotgrid):
+
+    # Build grid and stationary MODFLOW files
+
+    # Time step parameters
+    perlen = 365
+    nper = 30    # number of stress periods
+    nstp = 365      # Number of time steps per stress period
+    steady = [False] * nper
+    pumpingOn = [1] * nper
+    startingHead = 200
+
+    # Generate static MODFLOW input files
+
+    # Name model
+    model_name = 'mod'
+
+    # MODFLOW input files
+    mf = flopy.modflow.Modflow(model_name, exe_name='./mf2005dbl')
+    [dis, bas, nper, nstp, perlen] = build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
+    [mf, sr] = build_spatial_reference(mf)
+    pcg = build_pcg_file(mf)
+    [wel, numWells, well_loc] = build_wel_file(mf, sr)
+    oc = flopy.modflow.ModflowOc(mf, stress_period_data={(0, 0): ['print head', 'save head']})  # output control
+
+    # plot grid w/ boundary conditions
+    if plotgrid:
+        plotFunctions.grid_withBCs(mf, dis, sr, wel)
+
+    return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# def getGridCell_fromLatLong(lat, long, gridOffset):
+#     from pyproj import Proj
+#     import numpy as np
+#     import visual as v
+#
+#     # Define projection for UTM coordinaates in zone 38 (near riyadh)
+#     p = Proj(proj='utm', zone=38)
+#
+#     # Get UTM coordinates for lower left corner of grid
+#     [gridx, gridy] = p(22, 46)
+#
+#     # Get UTM coorindates for input lat long
+#     [x, y] = p(lat, long)
+#
+#     # Get distance between input point and grid corner in E-W, N-S axes
+#     delx = x - gridx
+#     dely = y - gridy
+#
+#     # Rotate distance to along grid axes
+#     v1 = v.vector(delx, dely)
+#     v2 = v.
+#
+#     # # Convert to distance along grid axes
+#     # theta = np.arctan(dely / delx)
+#     # alpha = np.radians(gridOffset)
+#     # h = np.sqrt(delx ** 2 + dely ** 2)
+#     # a = h * np.cos(theta - alpha)
+#     # b = h * np.sin(theta - alpha)
+#
+#     return a, b
 
