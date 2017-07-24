@@ -27,7 +27,7 @@ if flopypth not in sys.path:
 plotGrid = True
 
 # Run MODFLOW?
-runMODFLOW = False
+runMODFLOW = True
 modflowSilent = True
 
 # Delete modflow files after use?
@@ -39,7 +39,7 @@ numHeadFileSave = 1
 
 
 # Build MODFLOW grid of Riyadh
-[mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc] = makeRiyadhGrid.buildModel(plotGrid)
+[mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead] = makeRiyadhGrid.buildModel(plotGrid)
 
 
 if runMODFLOW:
@@ -61,7 +61,7 @@ if runMODFLOW:
         raise NameError('Only one type of parameter input allowed')
 
     # Sample size (number of MODFLOW runs for different input parameters)
-    sampleSize = 50
+    sampleSize = 3
     if paramInput or paramReadFile:
         sampleSize = 1
 

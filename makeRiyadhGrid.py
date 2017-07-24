@@ -143,15 +143,8 @@ def build_wel_file(mf, sr):
     wellx = [x[0][0] for x in well_loc]
     welly = [x[0][1] for x in well_loc]
 
-    [wellxrot, wellyrot] = sr.rotate(wellx[0], welly[0], theta=sr.rotation*-1, xorigin=sr.xll, yorigin=sr.yll)
-    [wellxrot, wellyrot] = sr.rotate(wellx[0] - sr.xll, welly[0] - sr.yll, theta=sr.rotation *-1, xorigin=0, yorigin=0)
-    # [well_loc_r, well_loc_c] = sr.get_rc(wellxrot, wellyrot)
-
-
+    [wellxrot, wellyrot] = sr.rotate(np.array(wellx) - sr.xll, np.array(welly) - sr.yll, theta=sr.rotation *-1, xorigin=0, yorigin=0)
     [well_loc_r, well_loc_c] = get_rc(sr, wellxrot, wellyrot)
-
-    # well_loc_r = 51
-    # well_loc_c = 6
 
     numWells = np.size(wellx)
     well_loc_array = np.transpose(np.vstack((np.zeros(numWells), well_loc_r, well_loc_c)))
@@ -161,9 +154,7 @@ def build_wel_file(mf, sr):
     # Read well pumping rates from shapefile
     wellData= flopy.export.shapefile_utils.shp2recarray(shp)
     pumpRate_MCMy = [float(x[1]) for x in wellData]
-    pump_rate =  np.asarray(pumpRate_MCMy) * -1 * 1e6 /365
-
-    startingHead = 200
+    pump_rate = np.asarray(pumpRate_MCMy) * -1 * 1e6 /365
 
     # check that number of pumpnig rates = number of wells
     if not len(pump_rate) == numWells:
@@ -188,7 +179,7 @@ def build_wel_file(mf, sr):
 
     wel = flopy.modflow.ModflowWel(mf, stress_period_data=stress_period_data)
 
-    return wel, numWells, well_loc
+    return wel, numWells, well_loc, pump_rate
 
 
 def get_rc(sr, x, y):
@@ -205,14 +196,19 @@ def get_rc(sr, x, y):
     r : row or sequence of rows (zero-based)
     c : column or sequence of columns (zero-based)
     """
+
+    import numpy.matlib
+
     if np.isscalar(x):
         c = (np.abs(sr.xcenter - x)).argmin()
         r = (np.abs(sr.ycenter - y)).argmin()
     else:
         xcp = np.array([sr.xcenter] * (len(x)))
         ycp = np.array([sr.ycenter] * (len(x)))
-        c = (np.abs(xcp - x)).argmin(axis=0)
-        r = (np.abs(ycp - y)).argmin(axis=0)
+        [_, xlen] = np.shape(xcp)
+        [_, ylen] = np.shape(ycp)
+        c = np.abs(xcp - np.transpose(np.matlib.repmat(x,xlen,1))).argmin(axis=1)
+        r = np.abs(ycp - np.transpose(np.matlib.repmat(y,ylen,1))).argmin(axis=1)
     return r, c
 
 
@@ -267,7 +263,6 @@ def buildModel(plotgrid):
     nper = 30    # number of stress periods
     nstp = 365      # Number of time steps per stress period
     steady = [False] * nper
-    pumpingOn = [1] * nper
     startingHead = 200
 
     # Generate static MODFLOW input files
@@ -280,14 +275,14 @@ def buildModel(plotgrid):
     [dis, bas, nper, nstp, perlen] = build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
     [mf, sr] = build_spatial_reference(mf)
     pcg = build_pcg_file(mf)
-    [wel, numWells, well_loc] = build_wel_file(mf, sr)
+    [wel, numWells, well_loc, pump_rate] = build_wel_file(mf, sr)
     oc = flopy.modflow.ModflowOc(mf, stress_period_data={(0, 0): ['print head', 'save head']})  # output control
 
     # plot grid w/ boundary conditions
     if plotgrid:
         plotFunctions.grid_withBCs(mf, dis, sr, wel)
 
-    return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc
+    return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead
 
 
 

@@ -17,10 +17,11 @@ import utm
 
 
 
-timeToOpen = '2017-07-12 20:46:02'
+
+timeToOpen = '2017-07-19 10:44:41'
 
 # Plot settings
-plotContours = False
+plotContours = True
 plotGrid = True
 plotMaxDrawdown = False
 numHydrograph = 0
@@ -56,12 +57,22 @@ for i in range(numHydrograph):
     # Call hydrograph function to make plot
     plotFunctions.hydrograph(headDataSample, timeSeries, hkSample, vkaSample, sySample, numWells, pump_rate, saveName, startingHead)
 
-# Plot contour map from first sample
-# Get head object from file
-#headobj = bf.HeadFile('headData' + timeToOpen + '.hds')
-# head_object.append(headobj)
-# Call countour function to make plot
-#plotFunctions.contour(headobj, timeSeries, saveName)
+
+if plotContours:
+    # Get head object from file
+    head_object = []
+    headobj = bf.HeadFile('headData' + timeToOpen + '.hds')
+    head_object.append(headobj)
+    # Make model to plot
+    mf = flopy.modflow.Modflow('mod', exe_name='./mf2005dbl')
+    [dis, _, _, _, _] = makeRiyadhGrid.build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
+    [mf, sr] = makeRiyadhGrid.build_spatial_reference(mf)
+    [wel, _, _, _] = makeRiyadhGrid.build_wel_file(mf, sr)
+    # Plot well locations and Riyadh?
+    plotwellriyadh = True
+    # Call countour function to make plot
+    saveName = timeToOpen
+    plotFunctions.contour(headobj, timeSeries, mf, sr, wel, dis, plotwellriyadh, saveName)
 
 
 # Plot model grid
@@ -69,17 +80,8 @@ for i in range(numHydrograph):
 if plotGrid:
     mf = flopy.modflow.Modflow('mod', exe_name='./mf2005dbl')
     [dis, _, _, _, _] = makeRiyadhGrid.build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
-
-    # Position grid at 22 degrees lat 46 degrees long using UTM 38
-    rotation = 22.3
-    rotation = 0
-    ll_lat = 22
-    ll_long = 46
-    [easting, northing, zoneNum, zoneLet] = utm.from_latlon(ll_lat, ll_long)
-
-    mf.sr = SpatialReference(delr=mf.dis.delr, delc=mf.dis.delc, xll=easting, yll=northing, epsg=32638, rotation=rotation)
-    # mf.sr = SpatialReference(delr=mf.dis.delr, delc=mf.dis.delc, xll=22, yll=46, rotation=rotation, units='meters')
-    modelMap = flopy.plot.map.ModelMap(sr=mf.sr, model=mf, dis=dis, layer=0, rotation=rotation, length_multiplier=1.0, xul=mf.sr.xul, yul=mf.sr.yul)
+    [mf, sr] = makeRiyadhGrid.build_spatial_reference(mf)
+    modelMap = flopy.plot.map.ModelMap(sr=sr, model=mf, dis=dis, layer=0, rotation=sr.rotation, length_multiplier=1.0, xul=sr.xul, yul=sr.yul)
     lineCollection = modelMap.plot_grid()
     lineCollection.zorder = 1
 
