@@ -47,11 +47,11 @@ if runMODFLOW:
     # Sampling setup and options
 
     # Parameter ranges for sampling
-    hk_min = 1.97e-3  # m/day
-    hk_max = 8.34e-3
+    hk_min = 0.4 # 1.97e-3  # m/day
+    hk_max = 2.5 # 8.34e-3
     vka_min = hk_min / 10
     vka_max = hk_max / 10
-    sy_min = 1.e-2  # estimate .07
+    sy_min = 1.5e-2  # estimate .07
     sy_max = 3.e-1
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
@@ -61,7 +61,7 @@ if runMODFLOW:
         raise NameError('Only one type of parameter input allowed')
 
     # Sample size (number of MODFLOW runs for different input parameters)
-    sampleSize = 3
+    sampleSize = 5
     if paramInput or paramReadFile:
         sampleSize = 1
 
@@ -127,13 +127,13 @@ if runMODFLOW:
         # Get hydrograph data
         for n in range(numWells):
             headTemp = headobj.get_ts(tuple(well_loc[n]))
-            headData[:,n,i] = headTemp[:,1]
+            headData[:,n,i] = headTemp[:,1]     # time x numWells x model run
 
         # Delete MODFLOW input and output files
         saveTime = datetimeStr
 
         if deleteFiles:
-            if i << numHeadFileSave:
+            if i < numHeadFileSave:
                 os.rename(model_name + '.hds', 'headData' + saveTime + '.hds')
             try:
                 os.remove(model_name + '.hds')

@@ -82,6 +82,13 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     delc = 5.E3
     delr = 5.E3
 
+    # Double grid spacing
+    nrow *= 2
+    ncol *= 2
+    delc *= 0.5
+    delr *= 0.5
+
+
     dis = flopy.modflow.ModflowDis(mf, nlay, nrow, ncol, delr=delc, delc=delr,
                                    top=ztop, botm=botm[1:],
                                    nper=nper, perlen=perlen, nstp=[nstp]*nper, steady=steady)
@@ -97,7 +104,7 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
 
 
 def build_lpf_file(mf, samples = None):
-# samples is a dictionary with a single sample for each input paramter
+# samples is a dictionary with a single sample for each i  nput paramter
 
     laytyp = 1  # 1 = unconfined, 0 = confined
     hdry = 0  # dry cell head set to this number
@@ -160,7 +167,7 @@ def build_wel_file(mf, sr):
     # Read well pumping rates from shapefile
     wellData= flopy.export.shapefile_utils.shp2recarray(shp)
     pumpRate_MCMy = [float(x[1]) for x in wellData]
-    pump_rate = np.asarray(pumpRate_MCMy) * -1 * 1e6 /365
+    pump_rate = np.asarray(pumpRate_MCMy) * -1 * 1e6 /365   # m/d
 
     # check that number of pumpnig rates = number of wells
     if not len(pump_rate) == numWells:
@@ -289,6 +296,9 @@ def buildModel(plotgrid):
         plotFunctions.grid_withBCs(mf, dis, sr, wel)
 
     return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, sr
+
+
+
 
 
 

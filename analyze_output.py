@@ -20,15 +20,18 @@ import csv
 
 
 
-timeToOpen = '2017-07-25 10:57:33'
+timeToOpen = '2017-07-25 15:02:44'
 
 # Plot settings
-plotContours = False
+plotContours = True
 plotGrid = False
 plotMaxDrawdown = True
 numHydrograph = 1
 modflowSilent = True
 pumpingCosts = False
+
+# Adjust heads using Theim?
+adjustHead = False
 
 modData = np.load('output_' + timeToOpen + '.npz')
 
@@ -57,7 +60,32 @@ with open('inputWellData.csv', 'rt') as csvfile:
     for row in reader:
         name.append(row[0])
 
+
+
+def adjustHeadTheim(headData, pump_rate, numWells, hk, nper, rw):
+    #  Updates heads calculated by model to account for smaller well radius
+    mf = flopy.modflow.Modflow('mod', exe_name='./mf2005dbl')
+    [dis, _, _, _, _] = makeRiyadhGrid.build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
+    re = 0.208 * dis.delc._array[0]
+    headAdjusted = np.zeros_like(headData)  # time x numWells x model run
+    numSamples = np.size(headData,2)
+    for i in range(nper):
+        for j in range(numWells):
+            for k in range(numSamples):
+                Q = -pump_rate[j]
+                K = hk[k]
+                h = headData[i, j, k]
+                headAdjusted[i, j, k] = np.sqrt(h**2 - Q/(np.pi*K) * np.log(re/rw))
+    return headAdjusted
+
+
+
+
 # Plot hydrographs for a certain number of samples
+if adjustHead:
+    rw = 1000
+    headData = adjustHeadTheim(headData, pump_rate, numWells, hk, nper, rw)
+
 for i in range(numHydrograph):
     # Get parameter and head data
     headDataSample = headData[:, :, i]
@@ -120,7 +148,7 @@ if plotMaxDrawdown:
     endDrawdowns = headData[-1, :, :]   # last time period for all wells for all samples
     maxDrawdown = np.amin(endDrawdowns,0)
     maxDrawdownWell = np.argmin(endDrawdowns,0)
-    plt.figure()
+    fig = plt.figure()
     plt.title('Distribution of Head after 30 years by well')
     plt.xlabel('Well number')
     plt.ylabel('Head [meters above bottom of aquifer]')
@@ -128,7 +156,7 @@ if plotMaxDrawdown:
     ax = plt.gca()
     ax.set_xticklabels(name)
     plt.show()
-
+    fig.savefig('maxDrawdownDist' + saveName + '.pdf')
 
 
 
