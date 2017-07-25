@@ -76,6 +76,12 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     delv = (ztop - zbot) / nlay
     botm = np.linspace(ztop, zbot, nlay + 1)
 
+    # Constant grid spacing
+    nrow += 0
+    ncol += 25
+    delc = 5.E3
+    delr = 5.E3
+
     dis = flopy.modflow.ModflowDis(mf, nlay, nrow, ncol, delr=delc, delc=delr,
                                    top=ztop, botm=botm[1:],
                                    nper=nper, perlen=perlen, nstp=[nstp]*nper, steady=steady)
@@ -282,7 +288,7 @@ def buildModel(plotgrid):
     if plotgrid:
         plotFunctions.grid_withBCs(mf, dis, sr, wel)
 
-    return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead
+    return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, sr
 
 
 

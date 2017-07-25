@@ -39,7 +39,7 @@ numHeadFileSave = 1
 
 
 # Build MODFLOW grid of Riyadh
-[mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead] = makeRiyadhGrid.buildModel(plotGrid)
+[mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, _] = makeRiyadhGrid.buildModel(plotGrid)
 
 
 if runMODFLOW:
@@ -56,7 +56,7 @@ if runMODFLOW:
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
     paramInput = False
-    paramReadFile = False
+    paramReadFile = True
     if paramInput and paramReadFile:
         raise NameError('Only one type of parameter input allowed')
 

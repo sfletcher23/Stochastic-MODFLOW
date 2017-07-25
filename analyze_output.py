@@ -6,6 +6,7 @@ import flopy.utils.binaryfile as bf
 import makeRiyadhGrid
 import matplotlib as ml
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from flopy.utils.geometry import Polygon, LineString, Point
 from flopy.utils.reference import SpatialReference
 from flopy.export.shapefile_utils import recarray2shp, shp2recarray
@@ -14,17 +15,18 @@ from flopy.utils.reference import epsgRef
 import shapely
 import os
 import utm
+import csv
 
 
 
 
-timeToOpen = '2017-07-19 10:44:41'
+timeToOpen = '2017-07-25 10:57:33'
 
 # Plot settings
-plotContours = True
-plotGrid = True
-plotMaxDrawdown = False
-numHydrograph = 0
+plotContours = False
+plotGrid = False
+plotMaxDrawdown = True
+numHydrograph = 1
 modflowSilent = True
 pumpingCosts = False
 
@@ -46,6 +48,15 @@ vka = modData['vka']
 sy = modData['sy']
 modflow_success = modData['modflow_success']
 
+
+# Get well names
+with open('inputWellData.csv', 'rt') as csvfile:
+    reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+    next(reader, None)  # skip header
+    name = []
+    for row in reader:
+        name.append(row[0])
+
 # Plot hydrographs for a certain number of samples
 for i in range(numHydrograph):
     # Get parameter and head data
@@ -64,10 +75,7 @@ if plotContours:
     headobj = bf.HeadFile('headData' + timeToOpen + '.hds')
     head_object.append(headobj)
     # Make model to plot
-    mf = flopy.modflow.Modflow('mod', exe_name='./mf2005dbl')
-    [dis, _, _, _, _] = makeRiyadhGrid.build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
-    [mf, sr] = makeRiyadhGrid.build_spatial_reference(mf)
-    [wel, _, _, _] = makeRiyadhGrid.build_wel_file(mf, sr)
+    [mf, _, wel, _, dis, _, _, _, _, _, _, _, _, _, _, sr] = makeRiyadhGrid.buildModel(False)
     # Plot well locations and Riyadh?
     plotwellriyadh = True
     # Call countour function to make plot
@@ -87,18 +95,25 @@ if plotGrid:
 
     # Plot a shapefile of well locations
     shp = 'wells'
-    patch_collection_wells = modelMap.plot_shapefile(shp, radius=2000, facecolor='red', edgecolor='red')
+    patch_collection_wells = modelMap.plot_shapefile(shp, radius=3000, edgecolor='black')
     patch_collection_wells.zorder = 3
+    values = np.arange(0, 1, 1/13)
+    cmap = ml.cm.get_cmap('gist_ncar')
+    patch_collection_wells.set(array=values, cmap=cmap)
+    empty_patches = []
+    for i in range(len(name)):
+        empty_patches.append(patches.Patch(facecolor=cmap(values[i]), label=name[i]))
+    plt.legend(handles=empty_patches)
 
     # Plot Royadh location
     shp = 'Riyadh'
-    patch_collection_riyadh = modelMap.plot_shapefile(shp, radius=5000, facecolor='green')
+    patch_collection_riyadh = modelMap.plot_shapefile(shp, radius=7000, facecolor='black', edgecolor='black')
     patch_collection_riyadh.zorder =2
 
     plt.show()
 
 
-    # epsg=4326
+
 
 # Calculate maximum drawdown across all wells
 if plotMaxDrawdown:
@@ -106,21 +121,13 @@ if plotMaxDrawdown:
     maxDrawdown = np.amin(endDrawdowns,0)
     maxDrawdownWell = np.argmin(endDrawdowns,0)
     plt.figure()
-    plt.title('Distribution of Drawdown after 30 years by well')
+    plt.title('Distribution of Head after 30 years by well')
     plt.xlabel('Well number')
-    plt.ylabel('Drawdown after 30 yeras')
+    plt.ylabel('Head [meters above bottom of aquifer]')
     plt.boxplot([endDrawdowns[i, :] for i in range(numWells)])
+    ax = plt.gca()
+    ax.set_xticklabels(name)
     plt.show()
-#
-mf.sr = SpatialReference(delr=mf.dis.delr, delc=mf.dis.delc, xul=603224.64, yul=2433164.43,
-                         proj4_str='UTM38Q', rotation=22.3)
-# chk = dis.check()
-# chk.summary_array
-# get_vertices = mf.sr.get_vertices  # function to get the referenced vertices for a model cell
-# geoms = Polygon(get_vertices(5, 4))
-# print(geoms.type)
-# print(geoms.exterior)
-# geoms.plot()
 
 
 

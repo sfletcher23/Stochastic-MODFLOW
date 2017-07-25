@@ -56,7 +56,7 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName):
     # Plot contour map
 
     # Setup contour parameters
-    levels = np.arange(0, 200, 1)
+    levels = np.arange(0, 200, .1)
 
     # Get head data
     head = headobj.get_data()
@@ -109,31 +109,6 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName):
     # Show and save figure
     plt.show()
     fig.savefig('contour' + saveName + '.pdf')
-
-
-
-
-    # # Create the plot
-    # fig2 = plt.figure()
-    # ax2 = fig2.add_subplot(1, 1, 1, aspect='equal')
-    # ax2.set_title('stress period ' + str(iplot + 1) + 't = ' + str(t))
-    # ax2.imshow(head[0, :, :], extent=None, cmap='BrBG', vmin=0., vmax=10.)
-    # CS = plt.contour(np.flipud(head[0, :, :]), levels=levels, extent=None,
-    #                     zorder=10)
-    # plt.clabel(CS, inline=1, fontsize=10, fmt='%1.1f', zorder=11)
-    # plt.colorbar()
-    # plt.show()
-    # fig2.savefig('contour' + saveName + '.pdf')
-
-
-
-
-
-
-
-
-
-
 
 
 
