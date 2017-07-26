@@ -76,17 +76,17 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     delv = (ztop - zbot) / nlay
     botm = np.linspace(ztop, zbot, nlay + 1)
 
-    # Constant grid spacing
-    nrow += 0
-    ncol += 25
-    delc = 5.E3
-    delr = 5.E3
+    # # Constant grid spacing
+    # nrow += 0
+    # ncol += 25
+    # delc = 5.E3
+    # delr = 5.E3
 
-    # Double grid spacing
-    nrow *= 2
-    ncol *= 2
-    delc *= 0.5
-    delr *= 0.5
+    # # Double grid spacing
+    # nrow *= 2
+    # ncol *= 2
+    # delc *= 0.5
+    # delr *= 0.5
 
 
     dis = flopy.modflow.ModflowDis(mf, nlay, nrow, ncol, delr=delc, delc=delr,

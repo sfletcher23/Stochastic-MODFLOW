@@ -23,10 +23,10 @@ import csv
 timeToOpen = '2017-07-25 15:02:44'
 
 # Plot settings
-plotContours = True
-plotGrid = False
-plotMaxDrawdown = True
-numHydrograph = 1
+plotContours = False
+plotGrid = True
+plotMaxDrawdown = False
+numHydrograph = 0
 modflowSilent = True
 pumpingCosts = False
 
@@ -53,7 +53,7 @@ modflow_success = modData['modflow_success']
 
 
 # Get well names
-with open('inputWellData.csv', 'rt') as csvfile:
+with open('inputWellData_noAgorHunayy.csv', 'rt') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
     next(reader, None)  # skip header
     name = []
@@ -125,13 +125,14 @@ if plotGrid:
     shp = 'wells'
     patch_collection_wells = modelMap.plot_shapefile(shp, radius=3000, edgecolor='black')
     patch_collection_wells.zorder = 3
-    values = np.arange(0, 1, 1/13)
-    cmap = ml.cm.get_cmap('gist_ncar')
+    values = np.arange(0, 1, 1/7)
+    cmap = ml.cm.get_cmap('spectral')
     patch_collection_wells.set(array=values, cmap=cmap)
     empty_patches = []
     for i in range(len(name)):
         empty_patches.append(patches.Patch(facecolor=cmap(values[i]), label=name[i]))
-    plt.legend(handles=empty_patches)
+    plt.legend(handles=empty_patches, bbox_to_anchor=(1, 1), loc='upper left', ncol=1)
+
 
     # Plot Royadh location
     shp = 'Riyadh'

@@ -27,7 +27,7 @@ if flopypth not in sys.path:
 plotGrid = True
 
 # Run MODFLOW?
-runMODFLOW = True
+runMODFLOW = False
 modflowSilent = True
 
 # Delete modflow files after use?

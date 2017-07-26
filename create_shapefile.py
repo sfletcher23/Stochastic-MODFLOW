@@ -24,7 +24,7 @@ wells_shp.field("Withdrawals", "C")
 counter = 1
 
 
-with open('inputWellData.csv', 'rt') as csvfile:
+with open('inputWellData_noAgorHunayy.csv', 'rt') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 
     next(reader, None)
