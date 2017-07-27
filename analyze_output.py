@@ -20,18 +20,18 @@ import csv
 
 
 
-timeToOpen = '2017-07-26 20:43:03'
+timeToOpen = '2017-07-27 09:06:00'
 
 # Plot settings
 plotContours = True
 plotGrid = False
 plotMaxDrawdown = False
-numHydrograph = 0
+numHydrograph = 1
 modflowSilent = True
 pumpingCosts = False
 
 # Adjust heads using Theim?
-adjustHead = False
+adjustHead = True
 
 modData = np.load('output_' + timeToOpen + '.npz')
 
@@ -85,7 +85,7 @@ def adjustHeadTheim(headData, pump_rate, numWells, hk, nper, rw):
 
 # Plot hydrographs for a certain number of samples
 if adjustHead:
-    rw = 1000
+    rw = 500
     headData = adjustHeadTheim(headData, pump_rate, numWells, hk, nper, rw)
 
 for i in range(numHydrograph):
@@ -147,7 +147,7 @@ if plotGrid:
     patch_collection_outcrop.zorder =2
 
     # Plot no flow cells (ibound)
-    quadmesh = modelMap.plot_ibound(alpha=0.5, color_noflow='brown')
+    # quadmesh = modelMap.plot_ibound(alpha=0.5, color_noflow='brown')
 
     # Plot Royadh location
     shp = 'Riyadh'

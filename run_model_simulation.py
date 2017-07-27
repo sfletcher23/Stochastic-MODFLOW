@@ -55,13 +55,13 @@ if runMODFLOW:
     sy_max = 3.e-1
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
-    paramInput = False
+    paramInput = True
     paramReadFile = False
     if paramInput and paramReadFile:
         raise NameError('Only one type of parameter input allowed')
 
     # Sample size (number of MODFLOW runs for different input parameters)
-    sampleSize = 25
+    sampleSize = 5
     if paramInput or paramReadFile:
         sampleSize = 1
 
@@ -70,7 +70,7 @@ if runMODFLOW:
         with open('sampleDict.txt', 'rb') as handle:
             samples = pickle.loads(handle.read())
     elif paramInput:
-        samples = {}
+        samples = {'hk': [hk_max], 'sy': [sy_max], 'vka': [hk_max/10]}
     else:
         samples = makeRiyadhGrid.genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], sy=[sy_min, sy_max])
 
