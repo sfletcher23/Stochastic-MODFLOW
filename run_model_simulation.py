@@ -27,7 +27,7 @@ if flopypth not in sys.path:
 plotGrid = True
 
 # Run MODFLOW?
-runMODFLOW = False
+runMODFLOW = True
 modflowSilent = True
 
 # Delete modflow files after use?
@@ -56,12 +56,12 @@ if runMODFLOW:
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
     paramInput = False
-    paramReadFile = True
+    paramReadFile = False
     if paramInput and paramReadFile:
         raise NameError('Only one type of parameter input allowed')
 
     # Sample size (number of MODFLOW runs for different input parameters)
-    sampleSize = 5
+    sampleSize = 25
     if paramInput or paramReadFile:
         sampleSize = 1
 

@@ -20,11 +20,11 @@ import csv
 
 
 
-timeToOpen = '2017-07-25 15:02:44'
+timeToOpen = '2017-07-26 20:43:03'
 
 # Plot settings
-plotContours = False
-plotGrid = True
+plotContours = True
+plotGrid = False
 plotMaxDrawdown = False
 numHydrograph = 0
 modflowSilent = True
@@ -53,13 +53,15 @@ modflow_success = modData['modflow_success']
 
 
 # Get well names
-with open('inputWellData_noAgorHunayy.csv', 'rt') as csvfile:
+with open('inputWellData_USGS.csv', 'rt') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
     next(reader, None)  # skip header
-    name = []
+    well_name = []
+    well_number = []
     for row in reader:
-        name.append(row[0])
-
+        well_number.append(row[0])
+        well_name.append(row[3])
+numWells = len(well_number)
 
 
 def adjustHeadTheim(headData, pump_rate, numWells, hk, nper, rw):
@@ -114,25 +116,38 @@ if plotContours:
 # Plot model grid
 # Create modflow option and dis file - these are the same across all samples, so okay to recreate here
 if plotGrid:
+
+    # Build model and grid
     mf = flopy.modflow.Modflow('mod', exe_name='./mf2005dbl')
-    [dis, _, _, _, _] = makeRiyadhGrid.build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
+    [dis, bas, _, _, _] = makeRiyadhGrid.build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
     [mf, sr] = makeRiyadhGrid.build_spatial_reference(mf)
+
+    # Plot grid
+    fig = plt.figure(figsize=(14, 9.8))
     modelMap = flopy.plot.map.ModelMap(sr=sr, model=mf, dis=dis, layer=0, rotation=sr.rotation, length_multiplier=1.0, xul=sr.xul, yul=sr.yul)
     lineCollection = modelMap.plot_grid()
     lineCollection.zorder = 1
 
     # Plot a shapefile of well locations
     shp = 'wells'
-    patch_collection_wells = modelMap.plot_shapefile(shp, radius=3000, edgecolor='black')
+    patch_collection_wells = modelMap.plot_shapefile(shp, radius=1000, edgecolor='black')
     patch_collection_wells.zorder = 3
-    values = np.arange(0, 1, 1/7)
+    values = np.arange(0, 1, 1/numWells)
     cmap = ml.cm.get_cmap('spectral')
     patch_collection_wells.set(array=values, cmap=cmap)
     empty_patches = []
-    for i in range(len(name)):
-        empty_patches.append(patches.Patch(facecolor=cmap(values[i]), label=name[i]))
+    for i in range(len(well_name)):
+        empty_patches.append(patches.Patch(facecolor=cmap(values[i]), label=well_name[i]))
     plt.legend(handles=empty_patches, bbox_to_anchor=(1, 1), loc='upper left', ncol=1)
 
+
+    # Plot outcrop
+    shp = 'outcrop'
+    patch_collection_outcrop= modelMap.plot_shapefile(shp, facecolor='brown', edgecolor='black', alpha=0.5)
+    patch_collection_outcrop.zorder =2
+
+    # Plot no flow cells (ibound)
+    quadmesh = modelMap.plot_ibound(alpha=0.5, color_noflow='brown')
 
     # Plot Royadh location
     shp = 'Riyadh'
@@ -155,7 +170,7 @@ if plotMaxDrawdown:
     plt.ylabel('Head [meters above bottom of aquifer]')
     plt.boxplot([endDrawdowns[i, :] for i in range(numWells)])
     ax = plt.gca()
-    ax.set_xticklabels(name)
+    ax.set_xticklabels(well_name)
     plt.show()
     fig.savefig('maxDrawdownDist' + saveName + '.pdf')
 

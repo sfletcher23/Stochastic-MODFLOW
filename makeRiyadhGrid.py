@@ -11,60 +11,50 @@ from flopy.export.shapefile_utils import recarray2shp, shp2recarray
 from flopy.utils.modpathfile import PathlineFile, EndpointFile
 from flopy.utils.reference import epsgRef
 import plotFunctions
+import csv
 
 
 
 def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
 
     # Make row spacings, units in meters
-    delr = np.zeros(84)
-    delr[0] = 15.E3
-    delr[1:12] = 10.E3  # 10 km
-    delr[12:15] = 7.E3
-    delr[15:20] = 5.E3
-    delr[20:25] = 3.E3
-    delr[25:28] = 1.5E3
-    delr[28:45] = 0.9E3
-    delr[45:49] = 1.3E3
-    delr[49:52] = 3.4E3
-    delr[52:68] = 1.4E3
-    delr[68:73] = 2.E3
-    delr[68:77] = 3.5E3
-    delr[73] = 5.E3
-    delr[74] = 6.E3
-    delr[75:77] = 8.E3
-    delr[77:84] = 13.E3
+    delr = np.zeros(108)
+    delr[0:7] = 15.E3  # 10 km
+    delr[7:9] = 10.E3
+    delr[9:10] = 8.E3
+    delr[10:11] = 6.E3
+    delr[11:12] = 5.E3
+    delr[12:16] = 3.E3
+    delr[16:19] = 2.E3
+    delr[19:59] = 1.E3
+    delr[59:62] = 1.5E3
+    delr[62:80] = 1.5E3
+    delr[80:94] = 1.5E3
+    delr[95] = 3.E3
+    delr[96] = 5.E3
+    delr[97] = 9.E3
+    delr[98] = 13.E3
+    delr[99:102] = 16.E3
+    delr[102:-1] = 18.E3
     delr = np.flip(delr,0)
     xlength = sum(delr)
 
     # Make column spacings, units in meters
-    delc = np.zeros(62)
-    delc[0:10] = 10.E3
-    delc[10:14] = 6.E3
-    delc[14:17] = 4.E3
-    delc[17] = 3.E3
-    delc[18] = 2.E3
-    delc[0:10] = 10.E3
-    delc[10:14] = 6.E3
-    delc[14:17] = 4.E3
-    delc[17] = 3.E3
-    delc[18] = 2.E3
-    delc[19] = 1E3
-    delc[20:31] = 0.7E3
-    delc[31:50] = 1.E3
-    delc[50] = 2.E3
-    delc[51] = 4.E3
-    delc[52] = 6.E3
-    delc[53] = 8.E3
-    delc[54:-1] = 10.E3
-    delc[19] = 1E3
-    delc[20:31] = 0.7E3
-    delc[31:50] = 0.8E3
-    delc[50] = 1.8E3
-    delc[51] = 3.8E3
-    delc[52] = 5.5E3
-    delc[53] = 8.E3
-    delc[54:-1] = 10.E3
+    delc = np.zeros(76)
+    delc[0:7] = 15.E3
+    delc[7:9] = 11.E3
+    delc[10] = 8.E3
+    delc[11:12] = 6.E3
+    delc[12:15] = 4.E3
+    delc[15:17] = 3.E3
+    delc[17:18] = 2.E3
+    delc[18:65] = 1.E3
+    delc[65:67] = 2.E3
+    delc[67] = 3.E3
+    delc[68] = 5.E3
+    delc[69] = 8.E3
+    delc[70] = 10.E3
+    delc[70:-1] = 12.E3
     ylength = sum(delc)
 
     # Other grid paratmers
@@ -94,7 +84,19 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
                                    nper=nper, perlen=perlen, nstp=[nstp]*nper, steady=steady)
 
     # BAS file inputs
-    ibound = np.ones((nlay, nrow, ncol), dtype=np.int32)  # Not sure if GW uses 0 or 1
+
+    # No flow boundaries for outcrop
+    ibound = np.ones((nlay, nrow, ncol), dtype=np.int32)  # 1: head varies with time, -1 head constant with time, 0 no flow cell
+    ibound[:, :, 0] = 0
+    ibound[:, 3:-1, 1] = 0
+    ibound[:, 6:-3, 2] = 0
+    ibound[:, 10:-4, 3] = 0
+    ibound[:, 30:-5, 4] = 0
+    ibound[:, 65:-7, 5] = 0
+
+
+
+
     strt = startingHead * np.ones((nlay, nrow, ncol), dtype=np.float32)  # Starting head
 
     bas = flopy.modflow.ModflowBas(mf, ibound=ibound, strt=strt)
@@ -163,11 +165,18 @@ def build_wel_file(mf, sr):
     well_loc_array = np.transpose(np.vstack((np.zeros(numWells), well_loc_r, well_loc_c)))
     well_loc = well_loc_array.astype(int).tolist()
 
+    # Get well names
+    with open('inputWellData_USGS.csv', 'rt') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        next(reader, None)  # skip header
+        pump_rate_low = []
+        pump_rate_high = []
+        for row in reader:
+            pump_rate_low.append(row[4])
+            pump_rate_high.append(row[5])
 
-    # Read well pumping rates from shapefile
-    wellData= flopy.export.shapefile_utils.shp2recarray(shp)
-    pumpRate_MCMy = [float(x[1]) for x in wellData]
-    pump_rate = np.asarray(pumpRate_MCMy) * -1 * 1e6 /365   # m/d
+    pump_rate = pump_rate_high      # In future, add a switch to change this
+    pump_rate = np.asarray([float(i) for i in pump_rate]) * -1.E6 / 365
 
     # check that number of pumpnig rates = number of wells
     if not len(pump_rate) == numWells:
@@ -258,8 +267,8 @@ def build_spatial_reference(mf):
     # Position grid at 22 degrees lat 46 degrees long using UTM 38
     rotation = 22.3
     # rotation = 0
-    ll_lat = 22
-    ll_long = 46
+    ll_lat = 22.5
+    ll_long = 45.79
     import utm
     [easting, northing, zoneNum, zoneLet] = utm.from_latlon(ll_lat, ll_long)
     sr = SpatialReference(delr=mf.dis.delr, delc=mf.dis.delc, xll=easting, yll=northing, epsg='32638', rotation=rotation)

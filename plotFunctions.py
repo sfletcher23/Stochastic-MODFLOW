@@ -29,22 +29,22 @@ def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName,
     ax1.set_ylabel('head')
     ax1.set_ylim(-1, startingHead)
 
-    with open('inputWellData.csv', 'rt') as csvfile:
+    with open('inputWellData_USGS.csv', 'rt') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 
         next(reader, None)  # skip header
 
-        name = []
+        well_number = []
         latitude = []
         longitude = []
         for row in reader:
-            name.append(row[0])
+            well_number.append(row[0])
             latitude.append(row[1])
             longitude.append(row[2])
 
     for n in range(numWells):
         ax1.plot(timeSeries / 365, headData[:,n],
-                 label= name[n] + ' : Pump rate = {0:.0f} m^3/d'.format(pump_rate[n]))
+                 label= well_number[n] + ' : Pump rate = {0:.0f} m^3/d'.format(pump_rate[n]))
     plt.legend(loc='right', bbox_to_anchor=(2.5, .5))
     plt.show()
     fig1.savefig('hydrograph' + saveName + '.pdf')
@@ -56,18 +56,16 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName):
     # Plot contour map
 
     # Setup contour parameters
-    levels = np.arange(0, 200, .1)
+    levels = np.arange(0, 200, 5)
 
     # Get head data
     head = headobj.get_data()
 
-    # Initialize figure
-    fig = plt.figure(figsize=(10, 10))
-
-    # 1st subplot: array plot
-    ax = fig.add_subplot(1, 2, 1, aspect='equal')
+    # 1st plot: array plot
+    fig1 = plt.figure(figsize=(10, 10))
     modelmap = flopy.plot.map.ModelMap(sr=sr, model=mf, dis=dis, layer=0, rotation=sr.rotation, length_multiplier=1.0,
                                        xul=sr.xul, yul=sr.yul)
+    ax = plt.gca()
     ax.set_title('plot_array()')
     quadmesh = modelmap.plot_ibound()
     quadmesh = modelmap.plot_array(head, masked_values=[999.], alpha=0.5)
@@ -84,14 +82,16 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName):
         shp = 'Riyadh'
         patch_collection_riyadh = modelmap.plot_shapefile(shp, radius=3000, facecolor='green', alpha=0.5)
         patch_collection_riyadh.zorder = 2
+    plt.show()
+
 
     # 2nd subplot: contour plot
-    ax = fig.add_subplot(1, 2, 2, aspect='equal')
+    fig2 = plt.figure(figsize=(10, 10))
     modelmap = flopy.plot.map.ModelMap(sr=sr, model=mf, dis=dis, layer=0, rotation=sr.rotation, length_multiplier=1.0,
                                        xul=sr.xul, yul=sr.yul)
+    ax = plt.gca()
     ax.set_title('contour_array()')
     quadmesh = modelmap.plot_ibound()
-    modelmap.plot_bc("WEL", wel)
     contour_set = modelmap.contour_array(head, masked_values=[999.], levels=levels, zorder=3)
     linecollection = modelmap.plot_grid(zorder=1)
     plt.colorbar(contour_set)
@@ -108,7 +108,8 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName):
 
     # Show and save figure
     plt.show()
-    fig.savefig('contour' + saveName + '.pdf')
+    fig1.savefig('contour_array' + saveName + '.pdf')
+    fig2.savefig('contour' + saveName + '.pdf')
 
 
 

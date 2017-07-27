@@ -24,7 +24,7 @@ wells_shp.field("Withdrawals", "C")
 counter = 1
 
 
-with open('inputWellData_noAgorHunayy.csv', 'rt') as csvfile:
+with open('inputWellData_USGS.csv', 'rt') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 
     next(reader, None)
@@ -33,10 +33,12 @@ with open('inputWellData_noAgorHunayy.csv', 'rt') as csvfile:
     p1 = pyproj.Proj(proj='utm', zone=zoneNumFixed, ellps='WGS84')
 
     for row in reader:
-        name = row[0]
+        well_number = row[0]
         latitude = row[1]
         longitude = row[2]
-        withdrawals = row[3]
+        well_name = row[3]
+        pump_rate_low = row[4]
+        pump_rate_high = row[5]
 
         # Convert from Lat/Long to to UTM - In the future, make sure the zone is the same for all points
         [easting, northing, zoneNum, zoneLet] = utm.from_latlon(float(latitude), float(longitude))
@@ -46,7 +48,7 @@ with open('inputWellData_noAgorHunayy.csv', 'rt') as csvfile:
 
         wells_shp.point(easting, northing)
 
-        wells_shp.record(name, withdrawals)
+        wells_shp.record(well_name, well_number, pump_rate_low, pump_rate_high)
 
         print("Feature " + str(counter) + " added to Shapefile.")
         counter = counter + 1
@@ -62,6 +64,53 @@ prj.close()
 
 
 
+
+
+# Make outcrop shapefile
+
+outcrop_shp = shapefile.Writer(shapefile.POLYGON)
+outcrop_shp.autoBalance = 1
+
+
+counter = 1
+
+
+with open('outcrop_locpoints.csv', 'rt') as csvfile:
+    reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+
+    next(reader, None)
+
+    zoneNumFixed = 38
+    p1 = pyproj.Proj(proj='utm', zone=zoneNumFixed, ellps='WGS84')
+
+    for row in reader:
+        latitude = row[0]
+        longitude = row[1]
+
+        # Convert from Lat/Long to to UTM - In the future, make sure the zone is the same for all points
+        [easting, northing, zoneNum, zoneLet] = utm.from_latlon(float(latitude), float(longitude))
+        if not (zoneNum == zoneNumFixed ):
+            p2 = pyproj.Proj(proj='utm', zone=zoneNum, ellps='WGS84')
+            [easting, northing] = pyproj.transform(p2, p1, easting, northing)
+
+        wells_shp.point(easting, northing)
+
+        print("Feature " + str(counter) + " added to Shapefile.")
+        counter = counter + 1
+
+# save the Shapefile
+wells_shp.save("outcrop")
+
+# create a projection file
+prj = open("outcrop", "w")
+epsg = getWKT_PRJ("4326")
+prj.write(epsg)
+prj.close()
+
+
+
+
+
 # Make shapefile with Riyadh location
 
 Riyadh_shp = shapefile.Writer(shapefile.POINT)
@@ -74,8 +123,9 @@ zoneNumFixed = 38
 p1 = pyproj.Proj(proj='utm', zone=zoneNumFixed, ellps='WGS84')
 
 name = 'Riyadh'
-latitude = 24.716199
-longitude = 46.712633
+
+latitude = 24.64
+longitude = 46.73
 
 # Convert from Lat/Long to to UTM - In the future, make sure the zone is the same for all points
 [easting, northing, zoneNum, zoneLet] = utm.from_latlon(float(latitude), float(longitude))
