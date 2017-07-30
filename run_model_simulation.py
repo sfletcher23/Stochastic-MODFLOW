@@ -19,6 +19,9 @@ import plotFunctions
 flopypth = os.path.join('..', '..', 'flopy')
 if flopypth not in sys.path:
     sys.path.append(flopypth)
+import time
+
+start_time = time.time()
 
 
 # Script Run paramters
@@ -39,7 +42,7 @@ numHeadFileSave = 1
 
 
 # Build MODFLOW grid of Riyadh
-[mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, _] = makeRiyadhGrid.buildModel(plotGrid)
+[mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, _, rch] = makeRiyadhGrid.buildModel(plotGrid)
 
 
 if runMODFLOW:
@@ -51,7 +54,7 @@ if runMODFLOW:
     hk_max = 2.5 # 8.34e-3
     vka_min = hk_min / 10
     vka_max = hk_max / 10
-    sy_min = 1.5e-2  # estimate .07
+    sy_min = 0.02  # estimate .07
     sy_max = 3.e-1
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
@@ -70,7 +73,7 @@ if runMODFLOW:
         with open('sampleDict.txt', 'rb') as handle:
             samples = pickle.loads(handle.read())
     elif paramInput:
-        samples = {'hk': [hk_max], 'sy': [sy_max], 'vka': [hk_max/10]}
+        samples = {'hk': [hk_min], 'sy': [sy_min], 'vka': [hk_min/10]}
     else:
         samples = makeRiyadhGrid.genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], sy=[sy_min, sy_max])
 
@@ -147,10 +150,13 @@ if runMODFLOW:
             os.remove(model_name + '.oc')
             os.remove(model_name + '.pcg')
             os.remove(model_name + '.wel')
+            os.remove(model_name + '.rch')
+
 
     np.savez('output_' + saveTime, time=timeSeries, numWells=numWells, pump_rate=pump_rate, well_loc=well_loc, nper=nper, nstp=nstp, steady=steady,
              perlen=perlen, startingHead=startingHead, headData=headData, hk=samples['hk'],  vka=samples['vka'], sy=samples['sy'], modflow_success=modflow_success)
 
+print("--- %s seconds ---" % (time.time() - start_time))
 
 
 

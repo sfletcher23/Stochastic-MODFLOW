@@ -12,6 +12,7 @@ from flopy.utils.modpathfile import PathlineFile, EndpointFile
 from flopy.utils.reference import epsgRef
 import plotFunctions
 import csv
+import time
 
 
 
@@ -27,9 +28,7 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     delr[12:16] = 3.E3
     delr[16:19] = 2.E3
     delr[19:59] = 1.E3
-    delr[59:62] = 1.5E3
-    delr[62:80] = 1.5E3
-    delr[80:94] = 1.5E3
+    delr[59:94] = 1.5E3
     delr[95] = 3.E3
     delr[96] = 5.E3
     delr[97] = 9.E3
@@ -38,6 +37,30 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     delr[102:-1] = 18.E3
     delr = np.flip(delr,0)
     xlength = sum(delr)
+
+
+    # Make row spacings, units in meters: expand the high resolution area
+    delr = np.zeros(108+18)
+    delr[0:7] = 15.E3  # 10 km
+    delr[7:9] = 10.E3
+    delr[9:10] = 8.E3
+    delr[10:11] = 6.E3
+    delr[11:12] = 5.E3
+    delr[12:16] = 3.E3
+    delr[16:19] = 2.E3
+    delr[19:59] = 1.E3
+    delr[59:94] = 1.E3
+    delr[94:114] = 1.E3
+    delr[114] = 2.E3
+    delr[115] = 4.E3
+    delr[116] = 8.E3
+    delr[117] = 13.E3
+    delr[118:121] = 16.E3
+    delr[121:-1] = 18.E3
+    delr = np.flip(delr,0)
+    xlength = sum(delr)
+
+
 
     # Make column spacings, units in meters
     delc = np.zeros(76)
@@ -204,6 +227,12 @@ def build_wel_file(mf, sr):
     return wel, numWells, well_loc, pump_rate
 
 
+def build_rch_file(mf):
+    recharge_rate = 5.E-3 / 365 # m/d
+    rch = flopy.modflow.mfrch.ModflowRch(mf, rech=recharge_rate)
+    return rch
+
+
 def get_rc(sr, x, y):
     """Return the row and column of a point or sequence of points
     in real-world coordinates.
@@ -297,6 +326,7 @@ def buildModel(plotgrid):
     [dis, bas, nper, nstp, perlen] = build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
     [mf, sr] = build_spatial_reference(mf)
     pcg = build_pcg_file(mf)
+    rch = build_rch_file(mf)
     [wel, numWells, well_loc, pump_rate] = build_wel_file(mf, sr)
     oc = flopy.modflow.ModflowOc(mf, stress_period_data={(0, 0): ['print head', 'save head']})  # output control
 
@@ -304,7 +334,7 @@ def buildModel(plotgrid):
     if plotgrid:
         plotFunctions.grid_withBCs(mf, dis, sr, wel)
 
-    return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, sr
+    return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, sr, rch
 
 
 

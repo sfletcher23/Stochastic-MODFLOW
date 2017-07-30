@@ -20,7 +20,7 @@ import csv
 
 
 
-timeToOpen = '2017-07-27 09:06:00'
+timeToOpen = '2017-07-28 16:35:53'
 
 # Plot settings
 plotContours = True
@@ -31,7 +31,7 @@ modflowSilent = True
 pumpingCosts = False
 
 # Adjust heads using Theim?
-adjustHead = True
+adjustHead = False
 
 modData = np.load('output_' + timeToOpen + '.npz')
 
@@ -105,7 +105,7 @@ if plotContours:
     headobj = bf.HeadFile('headData' + timeToOpen + '.hds')
     head_object.append(headobj)
     # Make model to plot
-    [mf, _, wel, _, dis, _, _, _, _, _, _, _, _, _, _, sr] = makeRiyadhGrid.buildModel(False)
+    [mf, _, wel, _, dis, _, _, _, _, _, _, _, _, _, _, sr, rchz] = makeRiyadhGrid.buildModel(False)
     # Plot well locations and Riyadh?
     plotwellriyadh = True
     # Call countour function to make plot
