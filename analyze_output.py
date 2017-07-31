@@ -20,12 +20,12 @@ import csv
 
 
 
-timeToOpen = '2017-07-28 16:35:53'
+timeToOpen = '2017-07-30 15:05:45'
 
 # Plot settings
-plotContours = True
+plotContours = False
 plotGrid = False
-plotMaxDrawdown = False
+plotMaxDrawdown = True
 numHydrograph = 1
 modflowSilent = True
 pumpingCosts = False
@@ -96,7 +96,8 @@ for i in range(numHydrograph):
     sySample = sy[i]
     saveName = timeToOpen + '_' + str(i)
     # Call hydrograph function to make plot
-    plotFunctions.hydrograph(headDataSample, timeSeries, hkSample, vkaSample, sySample, numWells, pump_rate, saveName, startingHead)
+    plotFunctions.hydrograph(headDataSample, timeSeries, hkSample, vkaSample, sySample, numWells, pump_rate, saveName,
+                             startingHead, multiplepanels=True)
 
 
 if plotContours:
@@ -164,6 +165,7 @@ if plotMaxDrawdown:
     endDrawdowns = headData[-1, :, :]   # last time period for all wells for all samples
     maxDrawdown = np.amin(endDrawdowns,0)
     maxDrawdownWell = np.argmin(endDrawdowns,0)
+    print('MaxDrawdown is ' + str(maxDrawdown) + ' in well ' +str(maxDrawdownWell+1))
     fig = plt.figure()
     plt.title('Distribution of Head after 30 years by well')
     plt.xlabel('Well number')

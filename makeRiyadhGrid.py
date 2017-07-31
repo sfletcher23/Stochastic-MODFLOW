@@ -39,26 +39,26 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     xlength = sum(delr)
 
 
-    # Make row spacings, units in meters: expand the high resolution area
-    delr = np.zeros(108+18)
-    delr[0:7] = 15.E3  # 10 km
-    delr[7:9] = 10.E3
-    delr[9:10] = 8.E3
-    delr[10:11] = 6.E3
-    delr[11:12] = 5.E3
-    delr[12:16] = 3.E3
-    delr[16:19] = 2.E3
-    delr[19:59] = 1.E3
-    delr[59:94] = 1.E3
-    delr[94:114] = 1.E3
-    delr[114] = 2.E3
-    delr[115] = 4.E3
-    delr[116] = 8.E3
-    delr[117] = 13.E3
-    delr[118:121] = 16.E3
-    delr[121:-1] = 18.E3
-    delr = np.flip(delr,0)
-    xlength = sum(delr)
+    # # Make row spacings, units in meters: expand the high resolution area - didn't make a difference
+    # delr = np.zeros(108+18)
+    # delr[0:7] = 15.E3  # 10 km
+    # delr[7:9] = 10.E3
+    # delr[9:10] = 8.E3
+    # delr[10:11] = 6.E3
+    # delr[11:12] = 5.E3
+    # delr[12:16] = 3.E3
+    # delr[16:19] = 2.E3
+    # delr[19:59] = 1.E3
+    # delr[59:94] = 1.E3
+    # delr[94:114] = 1.E3
+    # delr[114] = 2.E3
+    # delr[115] = 4.E3
+    # delr[116] = 8.E3
+    # delr[117] = 13.E3
+    # delr[118:121] = 16.E3
+    # delr[121:-1] = 18.E3
+    # delr = np.flip(delr,0)
+    # xlength = sum(delr)
 
 
 
@@ -270,6 +270,8 @@ def genParamSamples(sampleSize, **kwargs):
     # values: the min paramter value and the max parameter value
 
     from scipy.stats import uniform
+    from scipy.stats import lognorm
+    from scipy.stats import triang
     from pyDOE import lhs
 
     # Generate LHS samples
@@ -282,7 +284,16 @@ def genParamSamples(sampleSize, **kwargs):
     for key, value in kwargs.items():
         loc = value[0]
         scale = value[1] - value[0]
-        sample = uniform(loc=loc, scale=scale).ppf(lhd[:, i])
+        if key == 'hk':
+            s = 0.56
+            sample = lognorm(s).ppf(lhd[:, i])
+        elif key == 'sy':
+            loc = 0.02
+            scale = 0.28
+            c = 0.179
+            sample = triang(c, loc=loc, scale=scale).ppf(lhd[:, i])
+        else:
+            sample = uniform(loc=loc, scale=scale).ppf(lhd[:, i])
         params[key] = sample
         i += 1
 

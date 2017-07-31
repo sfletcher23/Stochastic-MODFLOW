@@ -52,10 +52,12 @@ if runMODFLOW:
     # Parameter ranges for sampling
     hk_min = 0.4 # 1.97e-3  # m/day
     hk_max = 2.5 # 8.34e-3
+    hk_mean = 1.170
     vka_min = hk_min / 10
     vka_max = hk_max / 10
     sy_min = 0.02  # estimate .07
     sy_max = 3.e-1
+    sy_mean = 0.13
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
     paramInput = True
@@ -73,9 +75,11 @@ if runMODFLOW:
         with open('sampleDict.txt', 'rb') as handle:
             samples = pickle.loads(handle.read())
     elif paramInput:
-        samples = {'hk': [hk_min], 'sy': [sy_min], 'vka': [hk_min/10]}
+        samples = {'hk': [hk_mean], 'sy': [sy_mean], 'vka': [hk_mean/10]}
+
     else:
         samples = makeRiyadhGrid.genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], sy=[sy_min, sy_max])
+        samples['vka'] = samples['hk'] / 10
 
     # Write samples to text file
     with open('sampleDict.txt', 'wb') as handle:
