@@ -20,7 +20,7 @@ import csv
 
 
 
-timeToOpen = '2017-07-30 15:05:45'
+timeToOpen = '2017-08-03 10:36:32'
 
 # Plot settings
 plotContours = False

@@ -34,7 +34,7 @@ runMODFLOW = True
 modflowSilent = True
 
 # Delete modflow files after use?
-deleteFiles = True
+deleteFiles = False
 
 # Save output?
 saveOutput = True
@@ -58,6 +58,11 @@ if runMODFLOW:
     sy_min = 0.02  # estimate .07
     sy_max = 3.e-1
     sy_mean = 0.13
+
+    #Param test
+    hk_mean = 1.932532E+00
+    vka_mean = 1.802678E-01
+    sy_mean = 2.782685E-02
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
     paramInput = True
