@@ -27,7 +27,7 @@ start_time = time.time()
 # Script Run paramters
 
 # plot grid?
-plotGrid = True
+plotGrid = False
 
 # Run MODFLOW?
 runMODFLOW = True
@@ -59,19 +59,15 @@ if runMODFLOW:
     sy_max = 3.e-1
     sy_mean = 0.13
 
-    #Param test
-    hk_mean = 1.932532E+00
-    vka_mean = 1.802678E-01
-    sy_mean = 2.782685E-02
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
-    paramInput = True
+    paramInput = False
     paramReadFile = False
     if paramInput and paramReadFile:
         raise NameError('Only one type of parameter input allowed')
 
-    # Sample size (number of MODFLOW runs for different input parameters)
-    sampleSize = 5
+    # Sample size (number of MODFLOW runs for different inputR parameters)
+    sampleSize = 1
     if paramInput or paramReadFile:
         sampleSize = 1
 

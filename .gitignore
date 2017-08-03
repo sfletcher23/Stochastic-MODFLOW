@@ -6,19 +6,8 @@
 
 #MODFLOW ignores
 mf2005dbl
-*.bas
-*.dis
 *.hds
-*.list
-*.lpf
-*.nam
-*.oc
-*.pcg
-*.wel
-*.ddn
-*.ibo
-*.txt
-*.pdf
+
 
 # Python ignores
 *.pyc
