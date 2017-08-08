@@ -34,7 +34,7 @@ runMODFLOW = True
 modflowSilent = True
 
 # Delete modflow files after use?
-deleteFiles = False
+deleteFiles = True
 
 # Save output?
 saveOutput = True
@@ -58,6 +58,8 @@ if runMODFLOW:
     sy_min = 0.02  # estimate .07
     sy_max = 3.e-1
     sy_mean = 0.13
+    hk_input = 1.9867453573638358
+    sy_input = 0.089353925337820564
 
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
@@ -76,7 +78,7 @@ if runMODFLOW:
         with open('sampleDict.txt', 'rb') as handle:
             samples = pickle.loads(handle.read())
     elif paramInput:
-        samples = {'hk': [hk_mean], 'sy': [sy_mean], 'vka': [hk_mean/10]}
+        samples = {'hk': [hk_input], 'sy': [sy_input], 'vka': [hk_input/10]}
 
     else:
         samples = makeRiyadhGrid.genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], sy=[sy_min, sy_max])
@@ -91,6 +93,13 @@ if runMODFLOW:
 
     # Get date and setup saving
     datetimeStr = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    saveTime = datetimeStr
+    runningSlurm = False
+    if os.environ.get('SLURM_JOB_ID') != None:
+        outputName = 'output_' + saveTime + '_' + os.environ.get('SLURM_JOB_ID') + '_' + os.environ.get('SLURM_ARRAY_TASK_ID')
+        runningSlurm = True
+    else:
+        outputName = 'output_' + saveTime
 
     # Initialize output dictionary and output parameters
     if saveOutput:
@@ -106,12 +115,16 @@ if runMODFLOW:
 
         # Get hydraulic conductivty, specific yield samples for this iteration
         samplesThisRun = {k: v[i] for k, v in samples.items()}
+        print(samplesThisRun)
 
         # Flopy LPF object
         [lpf, hk, vka, sy] = makeRiyadhGrid.build_lpf_file(mf, samples=samplesThisRun)
 
         # Write the model input files
         mf.write_input()
+        if runningSlurm:
+            from shutil import copyfile
+            copyfile('mod_correct.wel', 'mod.wel')
 
         # Run the model
         success, modflow_output = mf.run_model(silent=modflowSilent, pause=False, report=True)
@@ -138,7 +151,6 @@ if runMODFLOW:
             headData[:,n,i] = headTemp[:,1]     # time x numWells x model run
 
         # Delete MODFLOW input and output files
-        saveTime = datetimeStr
 
         if deleteFiles:
             if i < numHeadFileSave:
@@ -157,8 +169,7 @@ if runMODFLOW:
             os.remove(model_name + '.wel')
             os.remove(model_name + '.rch')
 
-
-    np.savez('output_' + saveTime, time=timeSeries, numWells=numWells, pump_rate=pump_rate, well_loc=well_loc, nper=nper, nstp=nstp, steady=steady,
+    np.savez(outputName, time=timeSeries, numWells=numWells, pump_rate=pump_rate, well_loc=well_loc, nper=nper, nstp=nstp, steady=steady,
              perlen=perlen, startingHead=startingHead, headData=headData, hk=samples['hk'],  vka=samples['vka'], sy=samples['sy'], modflow_success=modflow_success)
 
 print("--- %s seconds ---" % (time.time() - start_time))
