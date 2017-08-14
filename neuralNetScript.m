@@ -50,7 +50,7 @@ for i = 1:numFiles
     vka = [vka; data.vka(1:numSuccessfulRuns)'];
     pump_rate1 = [pump_rate1; data.pump_rate_1(1:numSuccessfulRuns)'];
     pump_rate2 = [pump_rate2; data.pump_rate_2(1:numSuccessfulRuns)'];
-
+ 
 end
 
 % Clear data and temp varaibles
