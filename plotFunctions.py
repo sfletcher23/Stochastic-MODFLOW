@@ -6,6 +6,7 @@ import flopy
 import flopy.utils.binaryfile as bf
 import matplotlib.pyplot as plt
 import csv
+import pickle
 
 
 def grid_withBCs(mf, dis, sr, well):
@@ -13,13 +14,13 @@ def grid_withBCs(mf, dis, sr, well):
     ax = fig.add_subplot(1, 1, 1, aspect='equal')
     modelmap = flopy.plot.ModelMap(model=mf, sr=sr, dis=dis)
     quadmesh = modelmap.plot_ibound()
-    quadmesh = modelmap.plot_bc('WEL')
+    # quadmesh = modelmap.plot_bc('WEL')
     linecollection = modelmap.plot_grid()
     plt.show()
 
 
 
-def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName, startingHead, multiplepanels=False):
+def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName, startingHead, multiplepanels=False, saveFig=True):
 
     with open('inputWellData_USGS.csv', 'rt') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -41,24 +42,20 @@ def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName,
     if multiplepanels:
 
         # Define different well sets to highlight
-        wellsIndex = [None] * 6
-        wellsNames = [None] * 6
-        wellsIndex[0] = np.arange(13, 29)
-        wellsNames[0] = 'Salbukh Well Field A: Wells 14-29'
-        wellsIndex[1] = np.arange(29, 34)
-        wellsNames[1] = 'Salbukh Well Field B: Wells 30-34'
-        wellsIndex[2] = np.arange(40, 58)
-        wellsNames[2] = 'Buwayb Well Field: Wells 41-59'
-        wellsIndex[3] = np.arange(66, 68)
-        wellsNames[3] = 'Malez: Wells 67-68'
-        wellsIndex[4] = np.asarray([80, 118])
-        wellsNames[4] = 'Al hair (80) and Shemesy (118)'
-        wellsIndex[5] = np.arange(92, 99)
-        wellsNames[5] = 'Central Riyadh: Wells 92-100'
+        wellsIndex = [None] * 4
+        wellsNames = [None] * 4
+        wellsIndex[0] = np.arange(13, 34)
+        wellsNames[0] = 'Salbukh Well Field'
+        wellsIndex[1] = np.arange(40, 58)
+        wellsNames[1] = 'Buwayb Well Field'
+        wellsIndex[2] = np.asarray([80, 118])
+        wellsNames[2] = 'Al hair and Shemesy'
+        wellsIndex[3] = np.arange(92, 99)
+        wellsNames[3] = 'Central Riyadh'
 
         fig1 = plt.figure()
-        for i in range(6):
-            ax1 = fig1.add_subplot(2, 3, i+1)
+        for i in range(4):
+            ax1 = fig1.add_subplot(2, 2, i+1)
             ax1.set_xlabel('time [years]')
             ax1.set_ylabel('head')
             ax1.set_ylim(-1, startingHead)
@@ -70,9 +67,13 @@ def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName,
                              color=cmap(values[n]), zorder=3)
                 else:
                     ax1.plot(timeSeries / 365, headData[:, n], color='black', zorder=1)
-            plt.legend(loc='right', bbox_to_anchor=(1.5, .5))
-        plt.suptitle('Hydrographs: K = {:.2e} , vK = {:.2e}, sy = {:.2e}'.format(hk, vka, sy))
+            # plt.legend(loc='right', bbox_to_anchor=(1.5, .5))
+        plt.suptitle('Hydrographs: K = {:.2} , vK = {:.2}, sy = {:.2}'.format(hk, vka, sy))
+        plt.tight_layout()
+        plt.subplots_adjust(top=0.85)
         plt.show()
+        path = 'hydrograph' + saveName + '.pkl'
+        pickle.dump(ax1, open(path, 'wb'))
         fig1.savefig('hydrograph' + saveName + '.pdf')
 
 
@@ -90,12 +91,15 @@ def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName,
                      label= well_number[n] + ' : Pump rate = {0:.0f} m^3/d'.format(pump_rate[n]), color=cmap(values[n]))
         plt.legend(loc='right', bbox_to_anchor=(2.5, .5))
         plt.show()
+        path = 'hydrograph' + saveName + '.pkl'
+        pickle.dump(fig1, open(path, 'wb'))
         fig1.savefig('hydrograph' + saveName + '.pdf')
 
 
 
 
-def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName):
+
+def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName, saveFig=True):
     # Plot contour map
 
     # Setup contour parameters
@@ -133,7 +137,7 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName):
     modelmap = flopy.plot.map.ModelMap(sr=sr, model=mf, dis=dis, layer=0, rotation=sr.rotation, length_multiplier=1.0,
                                        xul=sr.xul, yul=sr.yul)
     ax = plt.gca()
-    ax.set_title('contour_array()')
+    ax.set_title('Water table after 30 years [meters above bottom of aquifer]')
     quadmesh = modelmap.plot_ibound()
     contour_set = modelmap.contour_array(head, masked_values=[999.], levels=levels, zorder=3)
     linecollection = modelmap.plot_grid(zorder=1)
@@ -149,10 +153,23 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName):
         patch_collection_riyadh = modelmap.plot_shapefile(shp, radius=3000, facecolor='green', alpha=0.5)
         patch_collection_riyadh.zorder = 2
 
+    # # Plot inset zoom
+    # from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+    # from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+    # axins = zoomed_inset_axes(ax, 2.5, loc='upper right')
+    # # axins.imshow(contour_set, interpolation="nearest",
+    # #              origin="lower")
+    # x1, x2, y1, y2 = 650000, 750000, 265000, 280000
+    # axins.set_xlim(x1, x2)
+    # axins.set_ylim(y1, y2)
+
     # Show and save figure
+    # path = 'contour' + saveName + '.pkl'
+    # pickle.dump(fig2, open(path, 'wb'))
     plt.show()
     # fig1.savefig('contour_array' + saveName + '.pdf')
     fig2.savefig('contour' + saveName + '.pdf')
+
 
 
 

@@ -16,16 +16,17 @@ import shapely
 import os
 import utm
 import csv
+import pickle
 
 
 
 
-timeToOpen = '2017-08-03 10:36:32'
+timeToOpen = '2017-08-10 max'
 
 # Plot settings
-plotContours = False
+plotContours = True
 plotGrid = False
-plotMaxDrawdown = True
+plotMaxDrawdown = False
 numHydrograph = 1
 modflowSilent = True
 pumpingCosts = False
@@ -97,7 +98,7 @@ for i in range(numHydrograph):
     saveName = timeToOpen + '_' + str(i)
     # Call hydrograph function to make plot
     plotFunctions.hydrograph(headDataSample, timeSeries, hkSample, vkaSample, sySample, numWells, pump_rate, saveName,
-                             startingHead, multiplepanels=True)
+                             startingHead, multiplepanels=True, saveFig=True)
 
 
 if plotContours:
@@ -127,7 +128,10 @@ if plotGrid:
     fig = plt.figure(figsize=(14, 9.8))
     modelMap = flopy.plot.map.ModelMap(sr=sr, model=mf, dis=dis, layer=0, rotation=sr.rotation, length_multiplier=1.0, xul=sr.xul, yul=sr.yul)
     lineCollection = modelMap.plot_grid()
-    lineCollection.zorder = 1
+    lineCollection.zorder = 0
+    lineCollection.edgecolor = 'white'
+    ax = plt.gca()
+    ax.add_patch(patches.Rectangle((sr.xll, sr.yll),sum(sr.delr), sum(sr.delc), sr.rotation, edgecolor='black', facecolor='white'))
 
     # Plot a shapefile of well locations
     shp = 'wells'

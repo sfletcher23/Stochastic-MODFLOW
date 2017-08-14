@@ -58,12 +58,12 @@ if runMODFLOW:
     sy_min = 0.02  # estimate .07
     sy_max = 3.e-1
     sy_mean = 0.13
-    hk_input = 1.9867453573638358
-    sy_input = 0.089353925337820564
+    hk_input = hk_max
+    sy_input = sy_max
 
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
-    paramInput = False
+    paramInput = True
     paramReadFile = False
     if paramInput and paramReadFile:
         raise NameError('Only one type of parameter input allowed')
@@ -96,7 +96,7 @@ if runMODFLOW:
     saveTime = datetimeStr
     runningSlurm = False
     if os.environ.get('SLURM_JOB_ID') != None:
-        outputName = 'output_' + saveTime + '_' + os.environ.get('SLURM_JOB_ID') + '_' + os.environ.get('SLURM_ARRAY_TASK_ID')
+        outputName = 'output_' + saveTime + '_' + os.environ.get('SLURM_ARRAY_JOB_ID') + '_' + os.environ.get('SLURM_ARRAY_TASK_ID')
         runningSlurm = True
     else:
         outputName = 'output_' + saveTime
@@ -124,7 +124,7 @@ if runMODFLOW:
         mf.write_input()
         if runningSlurm:
             from shutil import copyfile
-            copyfile('mod_correct.wel', 'mod.wel')
+            copyfile('mod_correct.wel', model_name + '.wel')
 
         # Run the model
         success, modflow_output = mf.run_model(silent=modflowSilent, pause=False, report=True)

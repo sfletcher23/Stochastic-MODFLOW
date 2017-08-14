@@ -330,7 +330,11 @@ def buildModel(plotgrid):
     # Generate static MODFLOW input files
 
     # Name model
-    model_name = 'mod'
+    import os
+    if os.environ.get('SLURM_ARRAY_JOB_ID') != None:
+        model_name = 'mod_' + os.environ.get('SLURM_ARRAY_JOB_ID') + '_' + os.environ.get('SLURM_ARRAY_TASK_ID')
+    else:
+        model_name = 'mod'
 
     # MODFLOW input files
     mf = flopy.modflow.Modflow(model_name, exe_name='./mf2005dbl')
