@@ -48,7 +48,7 @@ def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName,
         wellsNames[0] = 'Salbukh Well Field'
         wellsIndex[1] = np.arange(40, 58)
         wellsNames[1] = 'Buwayb Well Field'
-        wellsIndex[2] = np.asarray([80, 118])
+        wellsIndex[2] = np.asarray([80, 107])
         wellsNames[2] = 'Al hair and Shemesy'
         wellsIndex[3] = np.arange(92, 99)
         wellsNames[3] = 'Central Riyadh'
