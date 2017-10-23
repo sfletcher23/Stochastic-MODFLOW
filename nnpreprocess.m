@@ -11,17 +11,22 @@
 
 %% Combine exisitng .mat files from simulation
 
-% Load data
+runsToUse = 20; 
+maxDrawdownRuns = 1;
+
+% Load head data
 timeToOpen = '2017-08-15 14:31:17';
 headData = [];
-for i = 10:10
+for i = 10:11
     filename = strcat('modflowData_headData',num2str(i), timeToOpen,'.mat');
     data = load(filename);
     headDataTemp = data.headData;
     headData = cat(3, headData, headDataTemp);
     clear data headDataTemp
 end
+headData = headData(:,:,1:runsToUse);
 
+% Load hk and sy data
 filename3 = strcat('modflowData_hk',timeToOpen,'.mat');
 filename4 = strcat('modflowData_sy',timeToOpen,'.mat');
 data = load(filename3);
@@ -30,17 +35,26 @@ clear data
 data = load(filename4);
 sy = data.sy;
 clear data
+% Get max drawdown samples, then remaining random
+hk_sorted = sort(hk);
+sy_sorted = sort(sy);
+hk_sorted = hk_sorted(1:maxDrawdownRuns);
+sy_sorted = sy_sorted(1:maxDrawdownRuns);
+hk = [hk(1:runsToUse - maxDrawdownRuns) hk_sorted];
+sy = [sy(1:runsToUse - maxDrawdownRuns) sy_sorted];
 
-headData = headData(:,:,1:200);
-hk = hk(1:200);
-sy = sy(1:200);
 
-disp('data loaded')    
-%% Aggregate data for time-series neural net model 
+disp('data loaded')
 
-% Get number of runs
+%% Reduce time granularity, extra high drawdown samples
+
 [numWells, numTime, numRuns] = size(headData);
-% [numRuns, numTime] = size(head_data1_overTime);
+index = 1:30:numTime;
+headData = headData(:,index,:);
+[~, numTime, ~] = size(headData);
+
+%
+%% Aggregate data for time-series neural net model 
 
 outputs = zeros(numRuns * numTime, numWells);
 

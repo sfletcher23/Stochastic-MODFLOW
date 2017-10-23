@@ -5,21 +5,29 @@
 %% Setup
 
 % Train neural net?
-trainNet = false;
+trainNet = true;
+% get job ID
+jobid = getenv('SLURM_JOB_ID');
 
 %% Combine exisitng .mat files from simulation
 
-% Load data
+runsToUse = 220;
+maxDrawdownRuns = 20;
+timeRunsToUse = 4000;
+
+% Load head data
 timeToOpen = '2017-08-15 14:31:17';
 headData = [];
-for i = 10:10
+for i = 3:3
     filename = strcat('modflowData_headData',num2str(i), timeToOpen,'.mat');
     data = load(filename);
     headDataTemp = data.headData;
     headData = cat(3, headData, headDataTemp);
     clear data headDataTemp
 end
+headData = headData(:,:,1:runsToUse);
 
+% Load hk and sy data
 filename3 = strcat('modflowData_hk',timeToOpen,'.mat');
 filename4 = strcat('modflowData_sy',timeToOpen,'.mat');
 data = load(filename3);
@@ -28,17 +36,26 @@ clear data
 data = load(filename4);
 sy = data.sy;
 clear data
+% Get max drawdown samples, then remaining random
+hk_sorted = sort(hk);
+sy_sorted = sort(sy);
+hk_sorted = hk_sorted(1:maxDrawdownRuns);
+sy_sorted = sy_sorted(1:maxDrawdownRuns);
+hk = [hk(1:runsToUse - maxDrawdownRuns) hk_sorted];
+sy = [sy(1:runsToUse - maxDrawdownRuns) sy_sorted];
 
-headData = headData(:,:,1:200);
-hk = hk(1:200);
-sy = sy(1:200);
 
-disp('data loaded')    
-%% Aggregate data for time-series neural net model 
+disp('data loaded')
 
-% Get number of runs
+%% Reduce time granularity, extra high drawdown samples
+
 [numWells, numTime, numRuns] = size(headData);
-% [numRuns, numTime] = size(head_data1_overTime);
+index = randsample(numTime, timeRunsToUse);
+headData = headData(:,index,:);
+[~, numTime, ~] = size(headData);
+
+%
+%% Aggregate data for time-series neural net model 
 
 outputs = zeros(numRuns * numTime, numWells);
 
@@ -53,6 +70,7 @@ clear tempHeadData headData
 inputs = zeros(numRuns * numTime, 3);
 
 % Replicate each static variable so the same value repeats for each time
+
 % period
 inputs(:,1) = reshape(repmat(hk(1:numRuns), [numTime,1]),[],1);
 inputs(:,2) = reshape(repmat(sy(1:numRuns), [numTime,1]),[],1);
@@ -75,7 +93,7 @@ if trainNet
 % 'trainlm' is usually fastest. % Levenberg-Marquardt backpropagation.
 % 'trainbr' takes longer but may be better for challenging problems.
 % 'trainscg' uses less memory. Suitable in low memory situations.
-trainFcn = 'trainlm';  
+trainFcn = 'trainscg';  
 
 % Create a Fitting Network
 hiddenLayerSize = 5;
@@ -108,8 +126,8 @@ disp('nn setup configured')
 pool = parpool('local', str2num(getenv('SLURM_CPUS_PER_TASK')));
 disp('pool started, ready for training')
 N = 16;
-[net,tr] = train(net,x,t,'useParallel','yes','useGPU','yes','showResources','yes', ...
-    'reduction',N, 'CheckpointFile','MyCheckpoint.mat');
+[net,tr] = train(net,x,t,'CheckpointFile', strcat('MyCheckpoint_', jobid),'useParallel','yes','useGPU','yes','showResources','yes','reduction',N);
+    
 
 % Test the Network
 y = net(x);
@@ -120,11 +138,11 @@ performance = perform(net,t,y);
 trainTargets = t .* tr.trainMask{1};
 valTargets = t .* tr.valMask{1};
 testTargets = t .* tr.testMask{1};
-trainPerformance = perform(net,trainTargets,y);
-valPerformance = perform(net,valTargets,y);
-testPerformance = perform(net,testTargets,y);
+trainPerformance = perform(net,trainTargets,y)
+valPerformance = perform(net,valTargets,y)
+testPerformance = perform(net,testTargets,y)
 
-save(strcat('nnoutput'+getenv('SLURM_CPUS_PER_TASK')))
+save(strcat('nnoutput_', jobid), '-v7.3')
 end
 
 %% Work with network after training and testing
@@ -156,7 +174,7 @@ end
 if (true)
     % Generate a matrix-only MATLAB function for neural network code
     % generation with MATLAB Coder tools.
-    genFunction(net,'myNeuralNetworkFunction','MatrixOnly','yes');
+    genFunction(net,strcat('myNeuralNetworkFunction_', jobid),'MatrixOnly','yes');
     y = myNeuralNetworkFunction(x);
 end
 if (false)

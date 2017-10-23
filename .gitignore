@@ -6,8 +6,7 @@
 
 #MODFLOW ignores
 mf2005dbl
-*.hds
-*.list
+
 
 # Python ignores
 *.pyc
