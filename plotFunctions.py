@@ -20,7 +20,7 @@ def grid_withBCs(mf, dis, sr, well):
 
 
 
-def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName, startingHead, multiplepanels=False, saveFig=True):
+def hydrograph(headData, timeSeries, hk, vka, ss, numWells, pump_rate, saveName, startingHead, multiplepanels=False, saveFig=True):
 
     with open('inputWellData_USGS.csv', 'rt') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='|')
@@ -68,7 +68,7 @@ def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName,
                 else:
                     ax1.plot(timeSeries / 365, headData[:, n], color='black', zorder=1)
             # plt.legend(loc='right', bbox_to_anchor=(1.5, .5))
-        plt.suptitle('Hydrographs: K = {:.2} , vK = {:.2}, sy = {:.2}'.format(hk, vka, sy))
+        plt.suptitle('Hydrographs: K = {:.2} , vK = {:.2}, ss = {:.2}'.format(hk, vka, ss))
         plt.tight_layout()
         plt.subplots_adjust(top=0.85)
         plt.show()
@@ -80,7 +80,7 @@ def hydrograph(headData, timeSeries, hk, vka, sy, numWells, pump_rate, saveName,
     else:
         fig1 = plt.figure()
         ax1 = fig1.add_subplot(121)
-        ttl = 'Hydrograph: K = {:.2e} , vK = {:.2e}, sy = {:.2e}'.format(hk, vka, sy)
+        ttl = 'Hydrograph: K = {:.2e} , vK = {:.2e}, ss = {:.2e}'.format(hk, vka, ss)
         ax1.set_title(ttl)
         ax1.set_xlabel('time [years]')
         ax1.set_ylabel('head')

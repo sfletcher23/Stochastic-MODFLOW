@@ -55,11 +55,11 @@ if runMODFLOW:
     hk_mean = 1.170
     vka_min = hk_min / 10
     vka_max = hk_max / 10
-    sy_min = 0.02  # estimate .07
-    sy_max = 3.e-1
-    sy_mean = 0.13
-    hk_input = hk_max
-    sy_input = sy_max
+    ss_min = 0.02  # estimate .07
+    ss_max = 3.e-1
+    ss_mean = 0.13
+    hk_input = 1.2
+    ss_input = 1.e-6
 
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
@@ -78,10 +78,10 @@ if runMODFLOW:
         with open('sampleDict.txt', 'rb') as handle:
             samples = pickle.loads(handle.read())
     elif paramInput:
-        samples = {'hk': [hk_input], 'sy': [sy_input], 'vka': [hk_input/10]}
+        samples = {'hk': [hk_input], 'ss': [ss_input], 'vka': [hk_input/10]}
 
     else:
-        samples = makeRiyadhGrid.genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], sy=[sy_min, sy_max])
+        samples = makeRiyadhGrid.genParamSamples(sampleSize=sampleSize, hk=[hk_min, hk_max], vka=[vka_min, vka_max], ss=[ss_min, ss_max])
         samples['vka'] = samples['hk'] / 10
 
     # Write samples to text file
@@ -118,7 +118,7 @@ if runMODFLOW:
         print(samplesThisRun)
 
         # Flopy LPF object
-        [lpf, hk, vka, sy] = makeRiyadhGrid.build_lpf_file(mf, samples=samplesThisRun)
+        [lpf, hk, vka, ss] = makeRiyadhGrid.build_lpf_file(mf, samples=samplesThisRun)
 
         # Write the model input files
         mf.write_input()
@@ -170,7 +170,7 @@ if runMODFLOW:
             os.remove(model_name + '.rch')
 
     np.savez(outputName, time=timeSeries, numWells=numWells, pump_rate=pump_rate, well_loc=well_loc, nper=nper, nstp=nstp, steady=steady,
-             perlen=perlen, startingHead=startingHead, headData=headData, hk=samples['hk'],  vka=samples['vka'], sy=samples['sy'], modflow_success=modflow_success)
+             perlen=perlen, startingHead=startingHead, headData=headData, hk=samples['hk'],  vka=samples['vka'], ss=samples['ss'], modflow_success=modflow_success)
 
 print("--- %s seconds ---" % (time.time() - start_time))
 

@@ -15,7 +15,7 @@ timeToOpen = '2017-08-15 14:10:25'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 headData = data['headData']
-sy = data['sy']
+ss = data['ss']
 hk = data['hk']
 vka = data['vka']
 runs = np.size(headData[0,0,:])
@@ -127,5 +127,5 @@ if buwayb:
 
 # save data to mat
 if saveToMat:
-    outputDic = dict(zip(['headData', 'hk', 'sy'], [headData, hk, sy]))
+    outputDic = dict(zip(['headData', 'hk', 'ss'], [headData, hk, ss]))
     io.savemat('modflowData' + timeToOpen, outputDic)

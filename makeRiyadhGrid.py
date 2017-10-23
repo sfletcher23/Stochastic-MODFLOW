@@ -136,8 +136,7 @@ def build_lpf_file(mf, samples = None):
     # Default paramter inputs if none given
     hk = 1.e-3
     vka = hk / 10
-    sy = .25
-    ss = 4.e-7 * 10
+    ss = 1.e-5 / 315
 
     for key, value in samples.items():
         if key == 'hk':
@@ -149,9 +148,9 @@ def build_lpf_file(mf, samples = None):
         elif key == 'ss':
             ss = value
 
-    lpf = flopy.modflow.ModflowLpf(mf, hk=hk, vka=vka, sy=sy, ss=ss, laytyp=laytyp, hdry=hdry)
+    lpf = flopy.modflow.ModflowLpf(mf, hk=hk, vka=vka, ss=ss, laytyp=laytyp, hdry=hdry)
 
-    return lpf, hk, vka, sy
+    return lpf, hk, vka, ss
 
 
 
@@ -286,7 +285,7 @@ def genParamSamples(sampleSize, **kwargs):
         if key == 'hk':
             s = 0.56
             sample = lognorm(s).ppf(lhd[:, i])
-        elif key == 'sy':
+        elif key == 'ss':
             loc = 0.02
             scale = 0.28
             c = 0.179
