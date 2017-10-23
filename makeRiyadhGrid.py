@@ -118,8 +118,7 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     ibound[:, 65:-7, 5] = 0
 
 
-
-
+    # Starting head
     strt = startingHead * np.ones((nlay, nrow, ncol), dtype=np.float32)  # Starting head
 
     bas = flopy.modflow.ModflowBas(mf, ibound=ibound, strt=strt)
@@ -131,7 +130,7 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
 def build_lpf_file(mf, samples = None):
 # samples is a dictionary with a single sample for each i  nput paramter
 
-    laytyp = 1  # 1 = unconfined, 0 = confined
+    laytyp = 0  # 1 = unconfined, 0 = confined
     hdry = 0  # dry cell head set to this number
 
     # Default paramter inputs if none given
@@ -198,7 +197,7 @@ def build_wel_file(mf, sr):
             pump_rate_low.append(row[4])
             pump_rate_high.append(row[5])
 
-    pump_rate = pump_rate_high      # In future, add a switch to change this
+    pump_rate = pump_rate_low / 2     # This makes total of ~287,000 cm/d, which is close to Adnan's estimate
     pump_rate = np.asarray([float(i) for i in pump_rate]) * -1.E6 / 365
 
     # check that number of pumpnig rates = number of wells
@@ -325,7 +324,7 @@ def buildModel(plotgrid):
     nper = 30    # number of stress periods
     nstp = 365      # Number of time steps per stress period
     steady = [False] * nper
-    startingHead = 200
+    startingHead = 1000
 
     # Generate static MODFLOW input files
 
