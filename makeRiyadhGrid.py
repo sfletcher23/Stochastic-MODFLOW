@@ -111,11 +111,10 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     # No flow boundaries for outcrop
     ibound = np.ones((nlay, nrow, ncol), dtype=np.int32)  # 1: head varies with time, -1 head constant with time, 0 no flow cell
     ibound[:, :, 0] = 0
-    ibound[:, 3:-1, 1] = 0
-    ibound[:, 6:-3, 2] = 0
-    ibound[:, 10:-4, 3] = 0
-    ibound[:, 30:-5, 4] = 0
-    ibound[:, 65:-7, 5] = 0
+    ibound[:, 6:-3, 1] = 0
+    ibound[:, 10:-4, 2] = 0
+    ibound[:, 30:-5, 3] = 0
+    ibound[:, 65:-7, 4] = 0
 
 
     # Starting head
@@ -196,8 +195,8 @@ def build_wel_file(mf, sr):
             pump_rate_low.append(row[4])
             pump_rate_high.append(row[5])
 
-    pump_rate = pump_rate_low / 2     # This makes total of ~287,000 cm/d, which is close to Adnan's estimate
-    pump_rate = np.asarray([float(i) for i in pump_rate]) * -1.E6 / 365
+    pump_rate = pump_rate_low
+    pump_rate = np.asarray([float(i) for i in pump_rate]) * -1.E6 / 365 / 2 # This makes total of ~287,000 cm/d, which is close to Adnan's estimate
 
     # check that number of pumpnig rates = number of wells
     if not len(pump_rate) == numWells:
@@ -226,8 +225,19 @@ def build_wel_file(mf, sr):
 
 
 def build_rch_file(mf):
+    recharge = np.zeros( (mf.nrow, mf.ncol), dtype=float)
     recharge_rate = 5.E-3 / 365 # m/d
-    rch = flopy.modflow.mfrch.ModflowRch(mf, rech=recharge_rate)
+    recharge[0:6, 1] = recharge_rate
+    recharge[ -3:-1, 1] = recharge_rate
+    recharge[ 6:10, 2] = recharge_rate
+    recharge[ -4:-2, 2] = recharge_rate
+    recharge[ 10:30, 3] = recharge_rate
+    recharge[ -5:-3, 3] = recharge_rate
+    recharge[ 30:65, 4] = recharge_rate
+    recharge[ -7:-4, 4] = recharge_rate
+    recharge[ 65:-7, 5] = recharge_rate
+
+    rch = flopy.modflow.mfrch.ModflowRch(mf, rech=recharge)
     return rch
 
 
@@ -345,7 +355,7 @@ def buildModel(plotgrid):
 
     # plot grid w/ boundary conditions
     if plotgrid:
-        plotFunctions.grid_withBCs(mf, dis, sr, wel)
+        plotFunctions.grid_withBCs(mf, dis, sr, wel, rch)
 
     return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, sr, rch
 

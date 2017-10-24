@@ -21,7 +21,7 @@ import pickle
 
 
 
-timeToOpen = '2017-08-10 max'
+timeToOpen = '2017-10-23 15:12:57'
 
 # Plot settings
 plotContours = True
@@ -49,7 +49,7 @@ headData = modData['headData']
 startingHead = np.asscalar(modData['startingHead'])
 hk = modData['hk']
 vka = modData['vka']
-sy = modData['sy']
+ss = modData['ss']
 modflow_success = modData['modflow_success']
 
 
@@ -94,10 +94,10 @@ for i in range(numHydrograph):
     headDataSample = headData[:, :, i]
     hkSample = hk[i]
     vkaSample = vka[i]
-    sySample = sy[i]
+    ssSample = ss[i]
     saveName = timeToOpen + '_' + str(i)
     # Call hydrograph function to make plot
-    plotFunctions.hydrograph(headDataSample, timeSeries, hkSample, vkaSample, sySample, numWells, pump_rate, saveName,
+    plotFunctions.hydrograph(headDataSample, timeSeries, hkSample, vkaSample, ssSample, numWells, pump_rate, saveName,
                              startingHead, multiplepanels=True, saveFig=True)
 
 

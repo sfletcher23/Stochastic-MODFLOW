@@ -9,11 +9,12 @@ import csv
 import pickle
 
 
-def grid_withBCs(mf, dis, sr, well):
+def grid_withBCs(mf, dis, sr, well, rch):
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(1, 1, 1, aspect='equal')
     modelmap = flopy.plot.ModelMap(model=mf, sr=sr, dis=dis)
     quadmesh = modelmap.plot_ibound()
+    quadmesh = modelmap.plot_array(rch.rech.array[0,0,:,:], masked_values=[0] )
     # quadmesh = modelmap.plot_bc('WEL')
     linecollection = modelmap.plot_grid()
     plt.show()
@@ -59,6 +60,7 @@ def hydrograph(headData, timeSeries, hk, vka, ss, numWells, pump_rate, saveName,
             ax1.set_xlabel('time [years]')
             ax1.set_ylabel('head')
             ax1.set_ylim(-1, startingHead)
+            ax1.set_yticks(np.arange(0, startingHead, 100))
             ax1.set_title(wellsNames[i])
             for n in range(numWells):
                 if int(well_number[n]) in wellsIndex[i]:
@@ -103,7 +105,7 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName, 
     # Plot contour map
 
     # Setup contour parameters
-    levels = np.arange(0, 200, 5)
+    levels = np.arange(0, 1000, 5)
 
     # Get head data
     head = headobj.get_data()

@@ -27,7 +27,7 @@ start_time = time.time()
 # Script Run paramters
 
 # plot grid?
-plotGrid = False
+plotGrid = True
 
 # Run MODFLOW?
 runMODFLOW = True
@@ -58,8 +58,8 @@ if runMODFLOW:
     ss_min = 0.02  # estimate .07
     ss_max = 3.e-1
     ss_mean = 0.13
-    hk_input = 1.2
-    ss_input = 1.e-6
+    hk_input = 45.9
+    ss_input = 2.3e-5
 
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
