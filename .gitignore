@@ -6,8 +6,17 @@
 
 #MODFLOW ignores
 mf2005dbl
-
+*.bas
+*.dis
+*.lpf
+*.hds
+*.nam
+*.rch
+*.wel
+*.oc
 
 # Python ignores
 *.pyc
+*.pkl
+*.npz
 __pycache__
