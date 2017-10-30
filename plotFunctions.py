@@ -70,7 +70,7 @@ def hydrograph(headData, timeSeries, hk, vka, ss, numWells, pump_rate, saveName,
                 else:
                     ax1.plot(timeSeries / 365, headData[:, n], color='black', zorder=1)
             # plt.legend(loc='right', bbox_to_anchor=(1.5, .5))
-        plt.suptitle('Hydrographs: K = {:.2} , vK = {:.2}, ss = {:.2}'.format(hk, vka, ss))
+        #plt.suptitle('Hydrographs: K = {:.2} , vK = {:.2}, ss = {:.2}'.format(hk, vka, ss))
         plt.tight_layout()
         plt.subplots_adjust(top=0.85)
         plt.show()

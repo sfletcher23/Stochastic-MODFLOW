@@ -14,9 +14,12 @@ mf2005dbl
 *.rch
 *.wel
 *.oc
+*.list
+*.pcg
 
 # Python ignores
 *.pyc
 *.pkl
 *.npz
+*.pdf
 __pycache__

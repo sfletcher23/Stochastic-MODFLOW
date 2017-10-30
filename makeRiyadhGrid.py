@@ -81,8 +81,8 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
     ylength = sum(delc)
 
     # Other grid paratmers
-    ztop = 315.
-    zbot = 0.
+    ztop = -466.
+    zbot = -588.
     nlay = 1
     nrow = np.size(delr)
     ncol = np.size(delc)
@@ -119,6 +119,21 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
 
     # Starting head
     strt = startingHead * np.ones((nlay, nrow, ncol), dtype=np.float32)  # Starting head
+    center_row = int(nrow / 2)
+    center_col = int(ncol / 2)
+    # maxstarthead =
+    # for i in range(nrow):
+    #     for j in range(ncol):
+    #         if i < center_row:
+    #             row_dist_to_center = sum(delr[i:center_row])
+    #         else:
+    #             row_dist_to_center = sum(delr[center_row:i])
+    #         if j < center_col:
+    #             col_dist_to_center = sum(delc[j:center_col])
+    #         else:
+    #             col_dist_to_center = sum(delc[center_col:j])
+    #         dist_to_center = np.sqrt(row_dist_to_center ** 2 + col_dist_to_center ** 2)
+
 
     bas = flopy.modflow.ModflowBas(mf, ibound=ibound, strt=strt)
 
@@ -168,7 +183,7 @@ def build_wel_file(mf, sr):
     # Time step parameters
     perlen = 365
     nper = 30  # number of stress periods
-    nstp = 365  # Number of time steps per stress period
+    nstp = 52  # Number of time steps per stress period
     steady = [False] * nper
     pumpingOn = [1] * nper
 
@@ -224,9 +239,9 @@ def build_wel_file(mf, sr):
     return wel, numWells, well_loc, pump_rate
 
 
-def build_rch_file(mf):
+def build_rch_file(mf, dis):
     recharge = np.zeros( (mf.nrow, mf.ncol), dtype=float)
-    recharge_rate = 5.E-3 / 365 # m/d
+    recharge_rate = 7.E-3 / 365 # m/d
     recharge[0:6, 1] = recharge_rate
     recharge[ -3:-1, 1] = recharge_rate
     recharge[ 6:10, 2] = recharge_rate
@@ -238,6 +253,22 @@ def build_rch_file(mf):
     recharge[ 65:-7, 5] = recharge_rate
 
     rch = flopy.modflow.mfrch.ModflowRch(mf, rech=recharge)
+
+    delc = dis.delr.array
+    delr = dis.delc.array
+    total_recharge = 0.
+    recharge_area = 0.
+    for i in range(mf.nrow):
+        for j in range(mf.ncol):
+            recharge_area_cell = delr[i] * delc[j] * recharge[i,j] / recharge_rate #/ 1.e6 # km2
+            total_recharge = (total_recharge + recharge_area_cell * recharge[i,j]) #/ 1.e9 * 365
+            recharge_area = recharge_area + recharge_area_cell
+            rate = total_recharge / recharge_area
+    recharge_area = recharge_area / 1.e6
+    total_recharge = total_recharge * 365 / 1.e6
+    print('recharge area: {} [km2], total recharge: {} [MCM/y, recharge: {} [mm/y]'
+          .format(recharge_area, total_recharge, total_recharge/recharge_area*1.e3))
+
     return rch
 
 
@@ -331,9 +362,9 @@ def buildModel(plotgrid):
     # Time step parameters
     perlen = 365
     nper = 30    # number of stress periods
-    nstp = 365      # Number of time steps per stress period
+    nstp = 52      # Number of time steps per stress period
     steady = [False] * nper
-    startingHead = 1000
+    startingHead = 375
 
     # Generate static MODFLOW input files
 
@@ -349,7 +380,7 @@ def buildModel(plotgrid):
     [dis, bas, nper, nstp, perlen] = build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
     [mf, sr] = build_spatial_reference(mf)
     pcg = build_pcg_file(mf)
-    rch = build_rch_file(mf)
+    rch = build_rch_file(mf, dis)
     [wel, numWells, well_loc, pump_rate] = build_wel_file(mf, sr)
     oc = flopy.modflow.ModflowOc(mf, stress_period_data={(0, 0): ['print head', 'save head']})  # output control
 
