@@ -59,9 +59,11 @@ def hydrograph(headData, timeSeries, hk, vka, ss, numWells, pump_rate, saveName,
             ax1 = fig1.add_subplot(2, 2, i+1)
             ax1.set_xlabel('time [years]')
             ax1.set_ylabel('head')
-            ax1.set_ylim(-1, startingHead)
-            ax1.set_yticks(np.arange(0, startingHead, 100))
+            ax1.set_ylim(-600, 700)
+            ax1.set_yticks(np.arange(-600, 700, 100))
             ax1.set_title(wellsNames[i])
+            plt.axhline(y=-588, color='grey', linestyle='dotted')
+            plt.axhline(y=612, color='grey', linestyle='dotted')
             for n in range(numWells):
                 if int(well_number[n]) in wellsIndex[i]:
                     ax1.plot(timeSeries / 365, headData[:,n],
@@ -105,7 +107,7 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName, 
     # Plot contour map
 
     # Setup contour parameters
-    levels = np.arange(0, 1000, 5)
+    levels = np.arange(-590, 610, 20)
 
     # Get head data
     head = headobj.get_data()
@@ -142,6 +144,8 @@ def contour(headobj, timeSeries, mf, sr, wel, dis, plot_wells_riyadh, saveName, 
     ax.set_title('Water table after 30 years [meters above bottom of aquifer]')
     quadmesh = modelmap.plot_ibound()
     contour_set = modelmap.contour_array(head, masked_values=[999.], levels=levels, zorder=3)
+    #contour_set.levels = np.arange(-500, 600, 50)
+    #plt.clabel(contour_set, contour_set.levels, inline=True, fontsize=10)
     linecollection = modelmap.plot_grid(zorder=1)
     plt.colorbar(contour_set)
     if plot_wells_riyadh:

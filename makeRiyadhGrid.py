@@ -241,7 +241,7 @@ def build_wel_file(mf, sr):
 
 def build_rch_file(mf, dis):
     recharge = np.zeros( (mf.nrow, mf.ncol), dtype=float)
-    recharge_rate = 7.E-3 / 365 # m/d
+    recharge_rate = 5.E-3 / 365 # m/d
     recharge[0:6, 1] = recharge_rate
     recharge[ -3:-1, 1] = recharge_rate
     recharge[ 6:10, 2] = recharge_rate
