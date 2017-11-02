@@ -15,17 +15,17 @@ countMax = 3
 DIR = 'simulation_data'
 runs = len([name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name))])
 
-headData = np.zeros((108, 365*30, runs))
-ss = np.zeros(runs)
-hk = np.zeros(runs)
-vka = np.zeros(runs)
+headData = np.empty((108,52*30, runs), float)
+ss = np.empty([runs])
+hk = np.empty([runs])
+vka = np.empty([runs])
 
 
 for file in os.listdir("simulation_data"):
-    if file.startswith("output_2017-08") & (counter < countMax):
+    if file.startswith("output_2017-11") & (counter < countMax):
         data = np.load("simulation_data/" + file)
-        headData[:,:,counter] = np.transpose(data['headData'])
-        sy[counter] = data['ss']
+        headData[:, :, counter] = np.reshape(data['headData'],(108,52*30))
+        ss[counter] = data['ss']
         hk[counter] = data['hk']
         vka[counter] = data['vka']
         counter += 1

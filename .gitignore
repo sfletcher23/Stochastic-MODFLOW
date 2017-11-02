@@ -3,6 +3,7 @@
 
 # MATLAB ignores
 *.m~
+*.mat
 
 #MODFLOW ignores
 mf2005dbl
@@ -22,4 +23,5 @@ mf2005dbl
 *.pkl
 *.npz
 *.pdf
+*.png
 __pycache__

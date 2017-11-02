@@ -119,32 +119,40 @@ def build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady):
 
     # Starting head
     strt = startingHead * np.ones((nlay, nrow, ncol), dtype=np.float32)  # Starting head
+    cone = np.ones((nlay, nrow, ncol), dtype=np.float32)
+    gradient = np.ones((nlay, nrow, ncol), dtype=np.float32)
     center_row = int(nrow / 2)
     center_col = int(ncol / 2)
-    # maxstarthead =
-    # for i in range(nrow):
-    #     for j in range(ncol):
-    #         if i < center_row:
-    #             row_dist_to_center = sum(delr[i:center_row])
-    #         else:
-    #             row_dist_to_center = sum(delr[center_row:i])
-    #         if j < center_col:
-    #             col_dist_to_center = sum(delc[j:center_col])
-    #         else:
-    #             col_dist_to_center = sum(delc[center_col:j])
-    #         dist_to_center = np.sqrt(row_dist_to_center ** 2 + col_dist_to_center ** 2)
-
+    max_start_head = 250
+    min_start_head = 200
+    max_dist_to_center = np.sqrt(sum(delr[0:center_row]) **2 + sum(delc[0:center_col]) **2)
+    max_dist_to_outcrop = sum(delc)
+    for i in range(nrow):
+        for j in range(ncol):
+            if i < center_row:
+                row_dist_to_center = sum(delr[i:center_row])
+            else:
+                row_dist_to_center = sum(delr[center_row:i])
+            if j < center_col:
+                col_dist_to_center = sum(delc[j:center_col])
+            else:
+                col_dist_to_center = sum(delc[center_col:j])
+            dist_to_center = np.sqrt(row_dist_to_center ** 2 + col_dist_to_center ** 2)
+            cone[0,i,j] = max_start_head - (max_start_head - min_start_head) * (dist_to_center/max_dist_to_center) ** 1.4
+            row_dist_to_outcrop = sum(delc[j:-1])
+            gradient[0,i,j] = 585 #+ 220 * row_dist_to_outcrop / max_dist_to_outcrop
+    strt = gradient - cone
 
     bas = flopy.modflow.ModflowBas(mf, ibound=ibound, strt=strt)
 
-    return dis, bas, nper, nstp, perlen
+    return dis, bas, nper, nstp, perlen, strt
 
 
 
 def build_lpf_file(mf, samples = None):
 # samples is a dictionary with a single sample for each i  nput paramter
 
-    laytyp = 0  # 1 = unconfined, 0 = confined
+    laytyp = 1  # 1 = unconfined, 0 = confined
     hdry = 0  # dry cell head set to this number
 
     # Default paramter inputs if none given
@@ -323,16 +331,16 @@ def genParamSamples(sampleSize, **kwargs):
     for key, value in kwargs.items():
         loc = value[0]
         scale = value[1] - value[0]
-        if key == 'hk':
-            s = 0.56
-            sample = lognorm(s).ppf(lhd[:, i])
-        elif key == 'ss':
-            loc = 0.02
-            scale = 0.28
-            c = 0.179
-            sample = triang(c, loc=loc, scale=scale).ppf(lhd[:, i])
-        else:
-            sample = uniform(loc=loc, scale=scale).ppf(lhd[:, i])
+        # if key == 'hk':
+        #     s = 0.56
+        #     sample = lognorm(s).ppf(lhd[:, i])
+        # elif key == 'ss':
+        #     loc = 0.02
+        #     scale = 0.28
+        #     c = 0.179
+        #     sample = triang(c, loc=loc, scale=scale).ppf(lhd[:, i])
+        # else:
+        sample = uniform(loc=loc, scale=scale).ppf(lhd[:, i])
         params[key] = sample
         i += 1
 
@@ -377,7 +385,7 @@ def buildModel(plotgrid):
 
     # MODFLOW input files
     mf = flopy.modflow.Modflow(model_name, exe_name='./mf2005dbl')
-    [dis, bas, nper, nstp, perlen] = build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
+    [dis, bas, nper, nstp, perlen, strt] = build_dis_bas_files(mf, startingHead, perlen, nper, nstp, steady)
     [mf, sr] = build_spatial_reference(mf)
     pcg = build_pcg_file(mf)
     rch = build_rch_file(mf, dis)
@@ -386,7 +394,7 @@ def buildModel(plotgrid):
 
     # plot grid w/ boundary conditions
     if plotgrid:
-        plotFunctions.grid_withBCs(mf, dis, sr, wel, rch)
+        plotFunctions.grid_withBCs(mf, dis, sr, wel, rch, strt)
 
     return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, sr, rch
 

@@ -9,7 +9,7 @@ import csv
 import pickle
 
 
-def grid_withBCs(mf, dis, sr, well, rch):
+def grid_withBCs(mf, dis, sr, well, rch, strt):
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(1, 1, 1, aspect='equal')
     modelmap = flopy.plot.ModelMap(model=mf, sr=sr, dis=dis)
@@ -19,6 +19,12 @@ def grid_withBCs(mf, dis, sr, well, rch):
     linecollection = modelmap.plot_grid()
     plt.show()
 
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(1, 1, 1, aspect='equal')
+    modelmap = flopy.plot.ModelMap(model=mf, sr=sr, dis=dis)
+    quadmesh = modelmap.plot_array(strt)
+    cbar = fig.colorbar(quadmesh)
+    plt.show()
 
 
 def hydrograph(headData, timeSeries, hk, vka, ss, numWells, pump_rate, saveName, startingHead, multiplepanels=False, saveFig=True):

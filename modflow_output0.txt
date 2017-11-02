@@ -4,5 +4,16 @@
                              Version 1.12.00 2/3/2017                        
 
  Using NAME file: mod.nam 
- Run start date and time (yyyy/mm/dd hh:mm:ss): 2017/08/03 13:41:52
+ Run start date and time (yyyy/mm/dd hh:mm:ss): 2017/10/30 17:37:38
 
+ Solving:  Stress period:     1    Time step:     1    Ground-Water Flow Eqn.
+
+Program received signal SIGFPE: Floating-point exception - erroneous arithmetic operation.
+
+Backtrace for this error:
+#0  0x10b4616a9
+#1  0x10b460a75
+#2  0x7fff928d6f19
+#3  0x10b159d11
+#4  0x10b1e4692
+#5  0x10b351138

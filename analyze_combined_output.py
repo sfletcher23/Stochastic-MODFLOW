@@ -4,14 +4,14 @@ import matplotlib.pyplot as plt
 import scipy.io as io
 
 # which analysis?
-plotBoxplot = False
-plotHydrographDist = False
-sabukh = False
-buwayb = False
-saveToMat = True
+plotBoxplot = True
+plotHydrographDist = True
+sabukh = True
+buwayb = True
+saveToMat = False
 
 # open combined data
-timeToOpen = '2017-08-15 14:10:25'
+timeToOpen = '2017-11-02 11:37:35'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 headData = data['headData']
@@ -71,15 +71,15 @@ if plotBoxplot:
 if plotHydrographDist:
     fig2 = plt.figure(figsize=(10,8))
     count=0
-    time = np.arange(0,365*30) / 365
+    time = np.arange(0,52*30) / 52
     for i in wellsIndex:
         count += 1
-        p1 = np.zeros(365*30)
-        p25 = np.zeros(365 * 30)
-        p50 = np.zeros(365 * 30)
-        p75 = np.zeros(365 * 30)
-        p99 = np.zeros(365 * 30)
-        for t in range(365*30):
+        p1 = np.zeros(52*30)
+        p25 = np.zeros(52 * 30)
+        p50 = np.zeros(52 * 30)
+        p75 = np.zeros(52 * 30)
+        p99 = np.zeros(52 * 30)
+        for t in range(52*30):
             x = headData[i,t,:]
             p1[t] = np.percentile(x, 1)
             p25[t] = np.percentile(x, 25)

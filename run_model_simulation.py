@@ -56,7 +56,7 @@ if runMODFLOW:
     vka_max = hk_max / 10
     ss_min = 0.5e-6  # estimate .07
     ss_max = 2.5e-5
-    hk_input = hk_min
+    hk_input = 0.9
     ss_input = ss_min
 
 
@@ -94,10 +94,10 @@ if runMODFLOW:
     saveTime = datetimeStr
     runningSlurm = False
     if os.environ.get('SLURM_JOB_ID') != None:
-        outputName = 'output_' + saveTime + '_' + os.environ.get('SLURM_ARRAY_JOB_ID') + '_' + os.environ.get('SLURM_ARRAY_TASK_ID')
+        outputName = 'simulation_data/output_' + saveTime + '_' + os.environ.get('SLURM_ARRAY_JOB_ID') + '_' + os.environ.get('SLURM_ARRAY_TASK_ID')
         runningSlurm = True
     else:
-        outputName = 'output_' + saveTime
+        outputName = 'simulation_data/output_' + saveTime
 
     # Initialize output dictionary and output parameters
     if saveOutput:
