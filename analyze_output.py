@@ -21,7 +21,7 @@ import pickle
 
 
 
-timeToOpen = '2017-11-02 10:54:14_26014_2'
+timeToOpen = '2017-11-02 13:45:03_26030 _1'
 
 # Plot settings
 plotContours = True
@@ -34,7 +34,7 @@ pumpingCosts = False
 # Adjust heads using Theim?
 adjustHead = False
 
-modData = np.load('output_' + timeToOpen + '.npz')
+modData = np.load('simulation_data/output_' + timeToOpen + '.npz')
 
 # Unpack modData
 timeSeries = modData['time']

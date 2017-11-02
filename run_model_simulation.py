@@ -56,12 +56,12 @@ if runMODFLOW:
     vka_max = hk_max / 10
     ss_min = 0.5e-6  # estimate .07
     ss_max = 2.5e-5
-    hk_input = 0.9
-    ss_input = ss_min
+    hk_input = 0.91
+    ss_input = ss_min*1.01
 
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
-    paramInput = True
+    paramInput = False
     paramReadFile = False
     if paramInput and paramReadFile:
         raise NameError('Only one type of parameter input allowed')
@@ -120,9 +120,9 @@ if runMODFLOW:
 
         # Write the model input files
         mf.write_input()
-        if runningSlurm:
-            from shutil import copyfile
-            copyfile('mod_correct.wel', model_name + '.wel')
+        # if false runningSlurm:
+        #     from shutil import copyfile
+        #     copyfile('mod_correct.wel', model_name + '.wel')
 
         # Run the model
         success, modflow_output = mf.run_model(silent=modflowSilent, pause=False, report=True)
