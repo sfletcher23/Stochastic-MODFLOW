@@ -5,17 +5,17 @@ import scipy.io as io
 
 # Save options
 saveNumpy = True
-saveMat = False
+saveMat = True
 
 # Use a counter to test on only three files
 counter = 0
-countMax = 3
+countMax = 5000
 
 # Preallocate arrays
 DIR = 'simulation_data'
 runs = len([name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name))])
 
-headData = np.empty((108,52*30, runs), float)
+
 ss = np.empty([runs])
 hk = np.empty([runs])
 vka = np.empty([runs])
@@ -23,8 +23,12 @@ vka = np.empty([runs])
 
 for file in os.listdir("simulation_data"):
     if file.startswith("output_2017-11") & (counter < countMax):
+        if counter == 0:
+            data = np.load("simulation_data/" + file)
+            numWells = data['numWells']
+            headData = np.empty((numWells, 52 * 30, runs), float)
         data = np.load("simulation_data/" + file)
-        headData[:, :, counter] = np.reshape(data['headData'],(108,52*30))
+        headData[:, :, counter] = np.reshape(data['headData'],(numWells,52*30))
         ss[counter] = data['ss']
         hk[counter] = data['hk']
         vka[counter] = data['vka']
