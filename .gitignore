@@ -25,3 +25,6 @@ mf2005dbl
 *.pdf
 *.png
 __pycache__
+
+# SLURM ignores
+*.out
