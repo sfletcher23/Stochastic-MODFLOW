@@ -27,7 +27,7 @@ start_time = time.time()
 # Script Run paramters
 
 # plot grid?
-plotGrid = True
+plotGrid = False
 
 # Run MODFLOW?
 runMODFLOW = True
@@ -56,8 +56,8 @@ if runMODFLOW:
     vka_max = hk_max / 10
     ss_min = 0.5e-6  # estimate .07
     ss_max = 2.5e-5
-    hk_input = 0.9
-    ss_input = ss_min*1
+    hk_input = 3
+    ss_input = ss_min*1.4
 
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file

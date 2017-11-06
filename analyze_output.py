@@ -21,7 +21,7 @@ import pickle
 
 
 
-timeToOpen = '2017-11-06 13:52:58'
+timeToOpen = '2017-11-06 14:18:31'
 
 # Plot settings
 plotContours = True
@@ -107,7 +107,7 @@ if plotContours:
     headobj = bf.HeadFile('headData' + timeToOpen + '.hds')
     head_object.append(headobj)
     # Make model to plot
-    [mf, _, wel, _, dis, _, _, _, _, _, _, _, _, _, _, sr, rchz] = makeRiyadhGrid.buildModel(False)
+    [mf, _, wel, _, dis, _, _, _, _, _, _, _, _, _, _, sr, rchz,_] = makeRiyadhGrid.buildModel(False)
     # Plot well locations and Riyadh?
     plotwellriyadh = True
     # Call countour function to make plot
