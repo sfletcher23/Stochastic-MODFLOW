@@ -38,7 +38,7 @@ deleteFiles = True
 
 # Save output?
 saveOutput = True
-numHeadFileSave = 1
+numHeadFileSave = 0
 
 
 # Build MODFLOW grid of Riyadh
