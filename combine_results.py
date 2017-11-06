@@ -5,7 +5,7 @@ import scipy.io as io
 
 # Save options
 saveNumpy = True
-saveMat = True
+saveMat = False
 
 # Use a counter to test on only three files
 counter = 0

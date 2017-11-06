@@ -24,7 +24,7 @@ wells_shp.field("Withdrawals", "C")
 counter = 1
 
 
-with open('inputWellData_USGS.csv', 'rt') as csvfile:
+with open('inputWellData.csv', 'rt') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 
     next(reader, None)
@@ -37,8 +37,7 @@ with open('inputWellData_USGS.csv', 'rt') as csvfile:
         latitude = row[1]
         longitude = row[2]
         well_name = row[3]
-        pump_rate_low = row[4]
-        pump_rate_high = row[5]
+        pump_rate= row[4]
 
         # Convert from Lat/Long to to UTM - In the future, make sure the zone is the same for all points
         [easting, northing, zoneNum, zoneLet] = utm.from_latlon(float(latitude), float(longitude))
@@ -48,7 +47,7 @@ with open('inputWellData_USGS.csv', 'rt') as csvfile:
 
         wells_shp.point(easting, northing)
 
-        wells_shp.record(well_name, well_number, pump_rate_low, pump_rate_high)
+        wells_shp.record(well_name, well_number, pump_rate)
 
         print("Feature " + str(counter) + " added to Shapefile.")
         counter = counter + 1

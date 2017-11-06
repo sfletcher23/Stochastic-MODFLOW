@@ -27,7 +27,7 @@ start_time = time.time()
 # Script Run paramters
 
 # plot grid?
-plotGrid = False
+plotGrid = True
 
 # Run MODFLOW?
 runMODFLOW = True
@@ -42,7 +42,7 @@ numHeadFileSave = 1
 
 
 # Build MODFLOW grid of Riyadh
-[mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, _, rch] = makeRiyadhGrid.buildModel(plotGrid)
+[mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, _, rch, well_num] = makeRiyadhGrid.buildModel(plotGrid)
 
 
 if runMODFLOW:
@@ -51,13 +51,13 @@ if runMODFLOW:
 
     # Parameter ranges for sampling
     hk_min = 0.9   # m/day
-    hk_max = 45
+    hk_max = 40
     vka_min = hk_min / 10
     vka_max = hk_max / 10
     ss_min = 0.5e-6  # estimate .07
     ss_max = 2.5e-5
-    hk_input = 0.91
-    ss_input = ss_min*1.01
+    hk_input = 0.9
+    ss_input = ss_min*1
 
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
@@ -167,7 +167,7 @@ if runMODFLOW:
             os.remove(model_name + '.wel')
             os.remove(model_name + '.rch')
 
-    np.savez(outputName, time=timeSeries, numWells=numWells, pump_rate=pump_rate, well_loc=well_loc, nper=nper, nstp=nstp, steady=steady,
+    np.savez(outputName, time=timeSeries, numWells=numWells, pump_rate=pump_rate, well_loc=well_loc, nper=nper, nstp=nstp, steady=steady, well_num=well_num,
              perlen=perlen, startingHead=startingHead, headData=headData, hk=samples['hk'],  vka=samples['vka'], ss=samples['ss'], modflow_success=modflow_success)
 
 print("--- %s seconds ---" % (time.time() - start_time))

@@ -11,7 +11,7 @@ buwayb = True
 saveToMat = False
 
 # open combined data
-timeToOpen = '2017-11-02 11:37:35'
+timeToOpen = '2017-11-03 11:18:51'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 headData = data['headData']
@@ -59,10 +59,13 @@ if plotBoxplot:
     x = np.transpose(headData[wellsIndex,-1,:])
     fig1 = plt.figure(figsize=(8,5))
     plt.boxplot(x, labels=wellsNames)
-    plt.title('Boxplot of drawdown after 30 years by well')
+    plt.title('Boxplot of head after 30 years by well')
     plt.ylabel('head [m]')
     plt.xticks(rotation=90)
     plt.tight_layout()
+    plt.ylim([-600, 650])
+    plt.axhline(y=-588, color='grey', linestyle='dotted')
+    plt.axhline(y=612, color='grey', linestyle='dotted')
     plt.show()
     fig1.savefig('boxplot_drawdown_'+ timeToOpen)
 

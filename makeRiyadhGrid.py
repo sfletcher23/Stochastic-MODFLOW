@@ -209,17 +209,16 @@ def build_wel_file(mf, sr):
     well_loc = well_loc_array.astype(int).tolist()
 
     # Get well names
-    with open('inputWellData_USGS.csv', 'rt') as csvfile:
+    with open('inputWellData.csv', 'rt') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='|')
         next(reader, None)  # skip header
-        pump_rate_low = []
-        pump_rate_high = []
+        pump_rate = []
+        well_num = []
         for row in reader:
-            pump_rate_low.append(row[4])
-            pump_rate_high.append(row[5])
+            pump_rate.append(row[4])
+            well_num.append(row[0])
 
-    pump_rate = pump_rate_low
-    pump_rate = np.asarray([float(i) for i in pump_rate]) * -1.E6 / 365 / 2 # This makes total of ~287,000 cm/d, which is close to Adnan's estimate
+    pump_rate = np.asarray([float(i) for i in pump_rate]) * -1.E6 / 365 # This makes total of ~298,000 cm/d
 
     # check that number of pumpnig rates = number of wells
     if not len(pump_rate) == numWells:
@@ -244,7 +243,7 @@ def build_wel_file(mf, sr):
 
     wel = flopy.modflow.ModflowWel(mf, stress_period_data=stress_period_data)
 
-    return wel, numWells, well_loc, pump_rate
+    return wel, numWells, well_loc, pump_rate, well_num
 
 
 def build_rch_file(mf, dis):
@@ -389,14 +388,14 @@ def buildModel(plotgrid):
     [mf, sr] = build_spatial_reference(mf)
     pcg = build_pcg_file(mf)
     rch = build_rch_file(mf, dis)
-    [wel, numWells, well_loc, pump_rate] = build_wel_file(mf, sr)
+    [wel, numWells, well_loc, pump_rate, well_num] = build_wel_file(mf, sr)
     oc = flopy.modflow.ModflowOc(mf, stress_period_data={(0, 0): ['print head', 'save head']})  # output control
 
     # plot grid w/ boundary conditions
     if plotgrid:
         plotFunctions.grid_withBCs(mf, dis, sr, wel, rch, strt)
 
-    return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, sr, rch
+    return mf, pcg, wel, oc, dis, bas, nper, nstp, perlen, numWells, model_name, well_loc, pump_rate, steady, startingHead, sr, rch, well_num
 
 
 

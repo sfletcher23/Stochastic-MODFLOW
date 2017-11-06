@@ -15,7 +15,7 @@ def grid_withBCs(mf, dis, sr, well, rch, strt):
     modelmap = flopy.plot.ModelMap(model=mf, sr=sr, dis=dis)
     quadmesh = modelmap.plot_ibound()
     quadmesh = modelmap.plot_array(rch.rech.array[0,0,:,:], masked_values=[0] )
-    # quadmesh = modelmap.plot_bc('WEL')
+    quadmesh = modelmap.plot_bc('WEL')
     linecollection = modelmap.plot_grid()
     plt.show()
 
@@ -29,7 +29,7 @@ def grid_withBCs(mf, dis, sr, well, rch, strt):
 
 def hydrograph(headData, timeSeries, hk, vka, ss, numWells, pump_rate, saveName, startingHead, multiplepanels=False, saveFig=True):
 
-    with open('inputWellData_USGS.csv', 'rt') as csvfile:
+    with open('inputWellData.csv', 'rt') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 
         next(reader, None)  # skip header

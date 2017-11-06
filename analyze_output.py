@@ -21,7 +21,7 @@ import pickle
 
 
 
-timeToOpen = '2017-11-02 13:45:03_26030 _1'
+timeToOpen = '2017-11-06 13:52:58'
 
 # Plot settings
 plotContours = True
@@ -54,7 +54,7 @@ modflow_success = modData['modflow_success']
 
 
 # Get well names
-with open('inputWellData_USGS.csv', 'rt') as csvfile:
+with open('inputWellData.csv', 'rt') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')
     next(reader, None)  # skip header
     well_name = []
