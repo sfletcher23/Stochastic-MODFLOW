@@ -209,16 +209,16 @@ def build_wel_file(mf, sr):
     well_loc = well_loc_array.astype(int).tolist()
 
     # Get well names
-    with open('inputWellData.csv', 'rt') as csvfile:
+    with open('inputWellData_USGS.csv', 'rt') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='|')
         next(reader, None)  # skip header
         pump_rate = []
         well_num = []
         for row in reader:
-            pump_rate.append(row[4])
+            pump_rate.append(row[5])
             well_num.append(row[0])
 
-    pump_rate = np.asarray([float(i) for i in pump_rate]) * -1.E6 / 365 # This makes total of ~298,000 cm/d
+    pump_rate = np.asarray([float(i) for i in pump_rate]) * -1.E6 / 365 /2 # This makes total of ~298,000 cm/d
 
     # check that number of pumpnig rates = number of wells
     if not len(pump_rate) == numWells:

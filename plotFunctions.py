@@ -29,7 +29,7 @@ def grid_withBCs(mf, dis, sr, well, rch, strt):
 
 def hydrograph(headData, timeSeries, hk, vka, ss, numWells, pump_rate, saveName, startingHead, multiplepanels=False, saveFig=True):
 
-    with open('inputWellData.csv', 'rt') as csvfile:
+    with open('inputWellData_USGS.csv', 'rt') as csvfile:
         reader = csv.reader(csvfile, delimiter=',', quotechar='|')
 
         next(reader, None)  # skip header

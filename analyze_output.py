@@ -21,7 +21,7 @@ import pickle
 
 
 
-timeToOpen = '2017-11-06 13:52:58'
+timeToOpen = '2017-11-06 14:11:50'
 
 # Plot settings
 plotContours = True
