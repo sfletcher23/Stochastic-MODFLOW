@@ -5,14 +5,14 @@ import scipy.io as io
 import csv
 
 # which analysis?
-plotBoxplot = False
+plotBoxplot = True
 plotHydrographDist = True
 sabukh = False
 buwayb = False
 saveToMat = False
 
 # open combined data
-timeToOpen = '2017-11-07 12:04:13'
+timeToOpen = '2017-11-07 12:25:37'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 headData = data['headData']

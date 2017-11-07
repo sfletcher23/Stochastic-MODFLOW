@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import scipy.io as io
 
 # open combined data
-timeToOpen = '2017-08-15 14:31:17'
+timeToOpen = '2017-11-07 12:25:37'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 
@@ -16,7 +16,7 @@ for i in range(divisions):
     range_max = int((i+1)*runs/divisions)
     headData = data['headData'][:,:,range_min:range_max]
     dicHead = dict(zip(['headData'], [headData]))
-    io.savemat('modflowData_headData'+ str(i) + timeToOpen, dicHead1)
+    io.savemat('modflowData_headData'+ str(i) + timeToOpen, dicHead)
 
 
 sy = data['sy']

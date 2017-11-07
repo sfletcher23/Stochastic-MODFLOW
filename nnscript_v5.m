@@ -20,7 +20,7 @@ sampleTime = false;
 maxFileNum = ceil(runsToUse/250)-1 ;
 
 % Load head data
-timeToOpen = '2017-08-15 14:31:17';
+timeToOpen = '2017-11-07 12:25:7';
 headData = [];
 runIndex = [];
 for i = 0:maxFileNum
