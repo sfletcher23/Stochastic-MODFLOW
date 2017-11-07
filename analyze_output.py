@@ -21,10 +21,10 @@ import pickle
 
 
 
-timeToOpen = '2017-11-06 14:18:31'
+timeToOpen = '2017-11-06 16:02:50_31670_4999'
 
 # Plot settings
-plotContours = True
+plotContours = False
 plotGrid = False
 plotMaxDrawdown = False
 numHydrograph = 1

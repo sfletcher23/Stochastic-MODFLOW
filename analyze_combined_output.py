@@ -2,16 +2,17 @@ import numpy as np
 import matplotlib as ml
 import matplotlib.pyplot as plt
 import scipy.io as io
+import csv
 
 # which analysis?
-plotBoxplot = True
+plotBoxplot = False
 plotHydrographDist = True
-sabukh = True
-buwayb = True
+sabukh = False
+buwayb = False
 saveToMat = False
 
 # open combined data
-timeToOpen = '2017-11-03 11:18:51'
+timeToOpen = '2017-11-07 12:04:13'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 headData = data['headData']
@@ -20,45 +21,39 @@ hk = data['hk']
 vka = data['vka']
 runs = np.size(headData[0,0,:])
 
+with open('inputWellData.csv', 'rt') as csvfile:
+    reader = csv.reader(csvfile, delimiter=',', quotechar='|')
+    next(reader, None)  # skip header
+    pump_rate = []
+    well_num = []
+    well_name = []
+    for row in reader:
+        pump_rate.append(float(row[4]))
+        well_num.append(int(row[0]))
+        well_name.append(row[3])
+
+
 # list of key wells
 # Define different well sets to highlight
-wellsIndex = [None] * 9
-wellsNames = [None] * 9
-wellsIndex[0] = 16
-wellsNames[0] = 'Salbukh 7 (Most)'
-wellsIndex[1] = 27
-wellsNames[1] = 'Salbukh 4 (Least)'
-wellsIndex[2] = 51
-wellsNames[2] = 'Buwayb 15 (Least)'
-wellsIndex[3] = 55
-wellsNames[3] = 'Buwayb 13 (Most)'
-wellsIndex[4] = 107
-wellsNames[4] = 'Shemesy'
-wellsIndex[5] = 68
-wellsNames[5] = 'RR2 (Central Riyadh)'
-wellsIndex[6] = 92
-wellsNames[6] = 'Royal Garage (Central Riyadh)'
-wellsIndex[7] = 93
-wellsNames[7] = 'Nasiriyah 1 (Central Riyadh)'
-wellsIndex[8] = 65
-wellsNames[8] = 'Malez 2'
+plotWells = [26, 27, 55, 53, 118, 29, 30, 31, 32, 44]
+plotWells = np.argpartition(headData[:,-1,2],10)[0:10]
+# plotWells = np.append(plotWells, [118])
+map(int, plotWells)
+wellsIndex = []
+wellsNames = []
+for i in range(len(well_num)):
+    if well_num[i] in plotWells:
+        wellsIndex.append(i)
+        wellsNames.append(well_name[i])
+
 
 
 # Make boxplot of drawdown after 30 years for key wells
 if plotBoxplot:
-    wellsNames[0] = 'Salbukh 7 \n(Most)'
-    wellsNames[1] = 'Salbukh 4 \n(Least)'
-    wellsNames[2] = 'Buwayb 15 \n(Least)'
-    wellsNames[3] = 'Buwayb 13 \n(Most)'
-    wellsNames[4] = 'Shemesy'
-    wellsNames[5] = 'RR2 \n(Central Riyadh)'
-    wellsNames[6] = 'Royal Garage \n(Central Riyadh)'
-    wellsNames[7] = 'Nasiriyah 1 \n(Central Riyadh)'
-    wellsNames[8] = 'Malez 2'
 
     x = np.transpose(headData[wellsIndex,-1,:])
     fig1 = plt.figure(figsize=(8,5))
-    plt.boxplot(x, labels=wellsNames)
+    plt.boxplot(x, labels=wellsNames, whis= [5, 95])
     plt.title('Boxplot of head after 30 years by well')
     plt.ylabel('head [m]')
     plt.xticks(rotation=90)
@@ -89,12 +84,12 @@ if plotHydrographDist:
             p50[t] = np.percentile(x, 50)
             p75[t] = np.percentile(x, 75)
             p99[t] = np.percentile(x, 99)
-        ax2 = fig2.add_subplot(3, 3, count)
+        ax2 = fig2.add_subplot(3, 4, count)
         ax2.fill_between(time, p1, p99, facecolor='PaleTurquoise', alpha=1, label='99% CI')
         ax2.fill_between(time, p25, p75, facecolor='LightSeaGreen', alpha=1, label='50% CI')
         ax2.plot(time, p50, color='black', label='median')
         ax2.set_title(wellsNames[count-1])
-        ax2.set_ylim([0, 200])
+        ax2.set_ylim([-600, 650])
         ax2.set_xlabel('years')
         ax2.set_ylabel('head [m]')
         if count == 1:
