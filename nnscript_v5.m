@@ -14,11 +14,11 @@ jobid = getenv('SLURM_JOB_ID');
 % Sampling parameters
 runsToUse = 30;
 maxDrawdownRuns = 2;
-timeRunsToUse = 365*30;
+timeRunsToUse = 52*30;
 maxTimeRuns = 0; 
 sampleTime = false;
 maxFileNum = ceil(runsToUse/250)-1 ;
-maxFileNum = 3;
+maxFileNum = 19;
 
 % Load head data
 timeToOpen = '2017-11-07 12:25:37';
