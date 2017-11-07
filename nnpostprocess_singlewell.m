@@ -2,9 +2,9 @@
 
 
 %% Neural net script to use
-netname = 'myNeuralNetworkFunction_17457';
+netname = 'myNeuralNetworkFunction_36771';
 netscript = str2func(netname); 
-wellIndex = 108;
+wellIndex = 23;
 
 %% Create x and t
 
@@ -13,10 +13,10 @@ loadData = true;
 if loadData == true
 
     % Load head data
-    timeToOpen = '2017-08-15 14:31:17';
+    timeToOpen = '2017-11-07 12:25:37';
     headData = [];
     runIndex = [];
-    for i = 11
+    for i = 19
         filename = strcat('modflowData_headData',num2str(i), timeToOpen,'.mat');
         data = load(filename);
         headDataTemp = data.headData;
@@ -26,14 +26,14 @@ if loadData == true
         clear data headDataTemp
     end
 
-    % Load hk and sy data
+    % Load hk and ss data
     filename3 = strcat('modflowData_hk',timeToOpen,'.mat');
-    filename4 = strcat('modflowData_sy',timeToOpen,'.mat');
+    filename4 = strcat('modflowData_ss',timeToOpen,'.mat');
     data = load(filename3);
-    hk = data.hk(runIndex); % Make sure get same runs for hk and sy as for headData
+    hk = data.hk(runIndex); % Make sure get same runs for hk and ss as for headData
     clear data
     data = load(filename4);
-    sy = data.sy(runIndex);
+    ss = data.ss(runIndex);
     clear data
     
     % Time vector
@@ -57,7 +57,7 @@ if loadData == true
 
     % period
     inputs(:,1) = reshape(repmat(hk(1:numRuns), [numTime,1]),[],1);
-    inputs(:,2) = reshape(repmat(sy(1:numRuns), [numTime,1]),[],1);
+    inputs(:,2) = reshape(repmat(ss(1:numRuns), [numTime,1]),[],1);
 
     % Reshape time to get a vector repeats each time numRuns times, then des
     % the same for the next time value
@@ -76,6 +76,7 @@ end
 numSamples = 100;
 index = randsample(numRuns, numSamples);
 y_estimated = netscript(x(:,index));
+y_estimated = y_estimated(wellIndex,:);
 y_actual = t(:,index);
 figure;
 scatter(1:numSamples, y_estimated,'*');
@@ -85,7 +86,7 @@ title('Well 1')
 xlabel('sample number')
 ylabel('head [m]')
 legend('Estimated', 'Actual')
-ylim([0 200])
+ylim([-600 650])
 
 %% Plot histogram of errors
 numSamples = 1000;
@@ -113,20 +114,22 @@ xticks(-40:10:80)
 %% Test one time series
 
 
-time = 1:365*30;
+time = 1:52*30;
 
 figure;
 % Plot time series; divide among subplots for readability
-for k = 1:20
+for k = 1:5
     i = randsample(numRuns,1);
     % Get row index range of time series corresponding to sample
-    indexMin = (i-1)*365*30 + 1;
-    indexMax = i*365*30;
+    indexMin = (i-1)*52*30 + 1;
+    indexMax = i*52*30;
 
     % Get estimates from nn and modflow output
     xsample = x(:,indexMin:indexMax);
     y_est = netscript(xsample);
     y_act = t(:, indexMin:indexMax);
+    y_est = y_est(wellIndex,:);
+   % y_act = y_act(wellIndex,:);
 
     hold on
     set(gca, 'ColorOrder', parula(12), 'NextPlot', 'replacechildren');

@@ -12,7 +12,7 @@ jobid = getenv('SLURM_JOB_ID');
 %% Combine exisitng .mat files from simulation
 
 % Sampling parameters
-runsToUse = 5000;
+runsToUse = 1000;
 maxDrawdownRuns = 2;
 timeRunsToUse = 52*30;
 maxTimeRuns = 0; 
@@ -105,7 +105,7 @@ if trainNet
 trainFcn = 'trainscg';  
 
 % Create a Fitting Network
-hiddenLayerSize = 5;
+hiddenLayerSize = [4 4];
 net = fitnet(hiddenLayerSize,trainFcn);
 
 % Choose Input and Output Pre/Post-Processing Functions
@@ -114,7 +114,7 @@ net.input.processFcns = {'removeconstantrows','mapminmax'};
 net.output.processFcns = {'removeconstantrows','mapminmax'};
 
 % Change transfer function
-net.layers{1}.transferFcn = 'purelin';
+net.layers{2}.transferFcn = 'purelin';
 
 % Setup Division of Data for Training, Validation, Testing
 % For a list of all data division functions type: help nndivide
