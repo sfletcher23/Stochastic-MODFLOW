@@ -330,16 +330,16 @@ def genParamSamples(sampleSize, **kwargs):
     for key, value in kwargs.items():
         loc = value[0]
         scale = value[1] - value[0]
-        # if key == 'hk':
-        #     s = 0.56
-        #     sample = lognorm(s).ppf(lhd[:, i])
+        if key == 'hk':
+            s = 1.214587406719255
+            sample = lognorm(s).ppf(lhd[:, i])
         # elif key == 'ss':
         #     loc = 0.02
         #     scale = 0.28
         #     c = 0.179
         #     sample = triang(c, loc=loc, scale=scale).ppf(lhd[:, i])
-        # else:
-        sample = uniform(loc=loc, scale=scale).ppf(lhd[:, i])
+        else:
+            sample = uniform(loc=loc, scale=scale).ppf(lhd[:, i])
         params[key] = sample
         i += 1
 
