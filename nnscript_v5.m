@@ -105,7 +105,7 @@ if trainNet
 trainFcn = 'trainscg';  
 
 % Create a Fitting Network
-hiddenLayerSize = 6;
+hiddenLayerSize = 5;
 net = fitnet(hiddenLayerSize,trainFcn);
 
 % Choose Input and Output Pre/Post-Processing Functions
