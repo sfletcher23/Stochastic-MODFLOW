@@ -12,7 +12,7 @@ jobid = getenv('SLURM_JOB_ID');
 %% Combine exisitng .mat files from simulation
 
 % Sampling parameters
-runsToUse = 30;
+runsToUse = 5000;
 maxDrawdownRuns = 2;
 timeRunsToUse = 52*30;
 maxTimeRuns = 0; 
@@ -187,7 +187,7 @@ if (true)
     % Generate a matrix-only MATLAB function for neural network code
     % generation with MATLAB Coder tools.
     genFunction(net,strcat('myNeuralNetworkFunction_', jobid),'MatrixOnly','yes');
-    y = myNeuralNetworkFunction(x);
+    %y = myNeuralNetworkFunction(x);
 end
 if (false)
     % Generate a Simulink diagram for simulation or deployment with.
