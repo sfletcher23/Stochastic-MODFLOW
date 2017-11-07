@@ -11,23 +11,23 @@ data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 divisions = 20;
 runs = 5000;
 
-for i in range(divisions):
-    range_min = int(i*runs/divisions)
-    range_max = int((i+1)*runs/divisions)
-    headData = data['headData'][:,:,range_min:range_max]
-    dicHead = dict(zip(['headData'], [headData]))
-    io.savemat('modflowData_headData'+ str(i) + timeToOpen, dicHead)
+# for i in range(divisions):
+#     range_min = int(i*runs/divisions)
+#     range_max = int((i+1)*runs/divisions)
+#     headData = data['headData'][:,:,range_min:range_max]
+#     dicHead = dict(zip(['headData'], [headData]))
+#     io.savemat('modflowData_headData'+ str(i) + timeToOpen, dicHead)
 
 
-sy = data['sy']
+ss = data['ss']
 hk = data['hk']
 vka = data['vka']
 data.close()
 
 dicHk = dict(zip(['hk'], [hk]))
-dicSy = dict(zip(['sy'], [sy]))
+dicSs = dict(zip(['ss'], [ss]))
 
 io.savemat('modflowData_hk' + timeToOpen, dicHk)
-io.savemat('modflowData_sy' + timeToOpen, dicSy)
+io.savemat('modflowData_sy' + timeToOpen, dicSs)
 
 
