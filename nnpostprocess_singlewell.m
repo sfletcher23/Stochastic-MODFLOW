@@ -2,26 +2,28 @@
 
 
 %% Neural net script to use
-netname = 'myNeuralNetworkFunction_36771';
+netname = 'myNeuralNetworkFunction_40323';
 netscript = str2func(netname); 
 wellIndex = 23;
+
 
 %% Create x and t
 
 loadData = true;
+runsPerFile = 150;
 
 if loadData == true
 
     % Load head data
-    timeToOpen = '2017-11-07 12:25:37';
+    timeToOpen = '2017-11-08 13:30:38';
     headData = [];
     runIndex = [];
-    for i = 19
+    for i = 8
         filename = strcat('modflowData_headData',num2str(i), timeToOpen,'.mat');
         data = load(filename);
         headDataTemp = data.headData;
         headData = cat(3, headData, headDataTemp(wellIndex, :, :));
-        runsThisFile = i*250 +1:(i+1)*250;
+        runsThisFile = i*runsPerFile +1:(i+1)*runsPerFile;
         runIndex = [runIndex runsThisFile];
         clear data headDataTemp
     end
@@ -137,30 +139,32 @@ for k = 1:5
     set(gca, 'ColorOrder', parula(12));
     hold on
     f2 = plot(time,y_act, '-.');
+    ylim([-600 650])
+    xlim([0 time(end)])
 end
 
 
 %% Plot targets vs estimates
-
-numSamples = 250;
-index = randsample(numRuns, numSamples);
-figure
-plot(1:.5:200, 1:.5:200, 'k')
-for i = 1:108
-    y_est= netscript(x(:,index));
-    y_est = y_est(i,:);
-    y_act = t(i,index);
-    hold on
-    scatter(y_act, y_est,1,'*')
-end
-ylabel('Estimates')
-xlabel('Targets')
-xlim([150 200])
-ylim([150 200])
+% 
+% numSamples = 100;
+% index = randsample(numRuns, numSamples);
+% figure
+% plot(1:.5:200, 1:.5:200, 'k')
+% for i = 1:108
+%     y_est= netscript(x(:,index));
+%     y_est = y_est(i,:);
+%     y_act = t(i,index);
+%     hold on
+%     scatter(y_act, y_est,1,'*')
+% end
+% ylabel('Estimates')
+% xlabel('Targets')
+% xlim([150 200])
+% ylim([150 200])
 
 %% MSE 
 y = netscript(x);
-mse = sum(sum( (y - t) .^2 )) / numel(y)
+mse = sum(sum( (y(wellIndex,:) - t(wellIndex,:)) .^2 )) / numel(y)
 rmse = sqrt(mse)
 
 indexAboveLimit = t > 100;

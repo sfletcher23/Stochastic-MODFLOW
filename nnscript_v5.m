@@ -106,7 +106,7 @@ if trainNet
 trainFcn = 'trainscg';  
 
 % Create a Fitting Network
-hiddenLayerSize = 5;
+hiddenLayerSize = 6;
 %hiddenLayerSize = [4 4];
 net = fitnet(hiddenLayerSize,trainFcn);
 
@@ -129,6 +129,9 @@ net.divideParam.testRatio = 15/100;
 % Choose a Performance Function
 % For a list of all performance functions type: help nnperformance
 net.performFcn = 'mse';  % Mean Squared Error
+
+% Set performance goal
+net.trainParam.goal = 30;
 
 % Choose Plot Functions
 % For a list of all plot functions type: help nnplot

@@ -2,37 +2,38 @@
 
 
 %% Neural net script to use
-netname = 'myNeuralNetworkFunction_17456';
+netname = 'myNeuralNetworkFunction_40323';
 netscript = str2func(netname); 
 
 %% Create x and t
 
 loadData = true;
+runsPerFile = 150;
 
 if loadData == true
 
     % Load head data
-    timeToOpen = '2017-08-15 14:31:17';
+    timeToOpen = '2017-11-08 13:30:38';
     headData = [];
     runIndex = [];
-    for i = 11
+    for i = 8
         filename = strcat('modflowData_headData',num2str(i), timeToOpen,'.mat');
         data = load(filename);
         headDataTemp = data.headData;
         headData = cat(3, headData, headDataTemp);
-        runsThisFile = i*250 +1:(i+1)*250;
+        runsThisFile = i*runsPerFile +1:(i+1)*runsPerFile;
         runIndex = [runIndex runsThisFile];
         clear data headDataTemp
     end
 
-    % Load hk and sy data
+    % Load hk and ss data
     filename3 = strcat('modflowData_hk',timeToOpen,'.mat');
-    filename4 = strcat('modflowData_sy',timeToOpen,'.mat');
+    filename4 = strcat('modflowData_ss',timeToOpen,'.mat');
     data = load(filename3);
-    hk = data.hk(runIndex); % Make sure get same runs for hk and sy as for headData
+    hk = data.hk(runIndex); % Make sure get same runs for hk and ss as for headData
     clear data
     data = load(filename4);
-    sy = data.sy(runIndex);
+    ss = data.ss(runIndex);
     clear data
     
     % Time vector
@@ -56,7 +57,7 @@ if loadData == true
 
     % period
     inputs(:,1) = reshape(repmat(hk(1:numRuns), [numTime,1]),[],1);
-    inputs(:,2) = reshape(repmat(sy(1:numRuns), [numTime,1]),[],1);
+    inputs(:,2) = reshape(repmat(ss(1:numRuns), [numTime,1]),[],1);
 
     % Reshape time to get a vector repeats each time numRuns times, then des
     % the same for the next time value
@@ -71,7 +72,7 @@ end
 
 
 %% Plot expected heads vs actual
-% wellIndex = randsample(108, 2);
+wellIndex = randsample(108, 2);
 numSamples = 100;
 index = randsample(numRuns, numSamples);
 y_estimated = netscript(x(:,index));
@@ -85,7 +86,7 @@ title('Well 1')
 xlabel('sample number')
 ylabel('head [m]')
 legend('Estimated', 'Actual')
-ylim([0 200])
+ylim([-600 650])
 subplot(1,2,2)
 scatter(1:numSamples, y_estimated(wellIndex(2),:), '*');
 hold on
@@ -94,10 +95,10 @@ title('Well 2')
 xlabel('sample number')
 ylabel('head [m]')
 legend('Estimated', 'Actual')
-ylim([0 200])
+ylim([-600 650])
 
 %% Plot histogram of errors
-numSamples = 250;
+numSamples = 100;
 index = randsample(numRuns, numSamples);
 y_est= netscript(x(:,index));
 err = y_est - t(:,index); 
@@ -115,11 +116,11 @@ title('Error histogran with 100 bins')
 % Sample run number to plot
 i = randsample(numRuns,1);
 
-time = 1:365*30;
+time = 1:52*30;
 
 % Get row index range of time series corresponding to sample
-indexMin = (i-1)*365*30 + 1;
-indexMax = i*365*30;
+indexMin = (i-1)*52*30 + 1;
+indexMax = i*52*30;
 
 % Get estimates from nn and modflow output
 xsample = x(:,indexMin:indexMax);
