@@ -12,7 +12,7 @@ buwayb = False
 saveToMat = False
 
 # open combined data
-timeToOpen = '2017-11-07 12:25:37'
+timeToOpen = '2017-11-08 09:29:39'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 headData = data['headData']
@@ -20,6 +20,22 @@ ss = data['ss']
 hk = data['hk']
 vka = data['vka']
 runs = np.size(headData[0,0,:])
+
+ss = ss[0:1500]
+hk = hk[0:1500]
+vka = vka[0:1500]
+headData = headData[:,:,0:1500]
+
+fig = plt.figure()
+ax1 = fig.add_subplot(1, 2, 1)
+plt.hist(ss, bins=np.linspace(0.1e-6, 10.e-5,100))
+ax1.set_title('SS')
+ax2 = fig.add_subplot(1, 2, 2)
+plt.hist(hk, bins=np.logspace(-7, 1, 100))
+plt.title('HK histogram')
+plt.show()
+
+
 
 with open('inputWellData.csv', 'rt') as csvfile:
     reader = csv.reader(csvfile, delimiter=',', quotechar='|')

@@ -54,7 +54,7 @@ if runMODFLOW:
     hk_max = 40
     vka_min = hk_min / 10
     vka_max = hk_max / 10
-    ss_min = 0.5e-6  # estimate .07
+    ss_min = 5.0e-6  # estimate .07
     ss_max = 2.5e-5
     hk_input = 3
     ss_input = ss_min*1.4
