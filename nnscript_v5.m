@@ -54,6 +54,11 @@ hk = hk(1:runsToUse);
 hk = log(hk);
 ss = log(ss);
 
+% Try fitting drawdown instead of absolute head
+[a, b, c] = size(headData);
+startingHead = headData(:,1,1);
+startingHead = repmat(startingHead,[1,b,c]);
+headData =  startingHead - headData;
 disp('data loaded')
 
 %% Reduce time granularity, extra high drawdown samples
