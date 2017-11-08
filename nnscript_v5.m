@@ -107,7 +107,7 @@ trainFcn = 'trainscg';
 
 % Create a Fitting Network
 hiddenLayerSize = 6;
-%hiddenLayerSize = [4 4];
+hiddenLayerSize = [4 4];
 net = fitnet(hiddenLayerSize,trainFcn);
 
 % Choose Input and Output Pre/Post-Processing Functions
@@ -116,7 +116,7 @@ net.input.processFcns = {'removeconstantrows','mapminmax'};
 net.output.processFcns = {'removeconstantrows','mapminmax'};
 
 % Change transfer function
-%net.layers{2}.transferFcn = 'purelin';
+net.layers{2}.transferFcn = 'purelin';
 
 % Setup Division of Data for Training, Validation, Testing
 % For a list of all data division functions type: help nndivide
