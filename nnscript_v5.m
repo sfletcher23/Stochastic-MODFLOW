@@ -13,15 +13,16 @@ jobid = getenv('SLURM_JOB_ID');
 
 % Sampling parameters
 runsToUse = 1000;
-maxDrawdownRuns = 2;
+runsPerFile = 150;
+maxDrawdownRuns = 0;
 timeRunsToUse = 52*30;
 maxTimeRuns = 0; 
 sampleTime = false;
-maxFileNum = ceil(runsToUse/250)-1 ;
-maxFileNum = 19;
+maxFileNum = ceil(runsToUse/runsPerFile)-1 ;
+maxFileNum = 7;
 
 % Load head data
-timeToOpen = '2017-11-07 12:25:37';
+timeToOpen = '2017-11-08 13:30:38';
 headData = [];
 runIndex = [];
 for i = 0:maxFileNum
@@ -29,7 +30,7 @@ for i = 0:maxFileNum
     data = load(filename);
     headDataTemp = data.headData;
     headData = cat(3, headData, headDataTemp);
-    runsThisFile = i*250 +1:(i+1)*250;
+    runsThisFile = i*runsPerFile +1:(i+1)*runsPerFile;
     runIndex = [runIndex runsThisFile];
     clear data headDataTemp
 end
@@ -105,7 +106,8 @@ if trainNet
 trainFcn = 'trainscg';  
 
 % Create a Fitting Network
-hiddenLayerSize = [4 4];
+hiddenLayerSize = 5;
+%hiddenLayerSize = [4 4];
 net = fitnet(hiddenLayerSize,trainFcn);
 
 % Choose Input and Output Pre/Post-Processing Functions
@@ -114,7 +116,7 @@ net.input.processFcns = {'removeconstantrows','mapminmax'};
 net.output.processFcns = {'removeconstantrows','mapminmax'};
 
 % Change transfer function
-net.layers{2}.transferFcn = 'purelin';
+%net.layers{2}.transferFcn = 'purelin';
 
 % Setup Division of Data for Training, Validation, Testing
 % For a list of all data division functions type: help nndivide

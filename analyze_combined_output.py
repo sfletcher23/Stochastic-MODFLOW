@@ -12,7 +12,7 @@ buwayb = False
 saveToMat = False
 
 # open combined data
-timeToOpen = '2017-11-08 09:29:39'
+timeToOpen = '2017-11-08 12:24:51'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 headData = data['headData']
@@ -52,8 +52,8 @@ with open('inputWellData.csv', 'rt') as csvfile:
 # list of key wells
 # Define different well sets to highlight
 plotWells = [26, 27, 55, 53, 118, 29, 30, 31, 32, 44]
-plotWells = np.argpartition(headData[:,-1,2],10)[0:10]
-# plotWells = np.append(plotWells, [118])
+plotWells = np.argpartition(headData[:,-1,2],6)[0:6]
+plotWells = np.append(plotWells, [27, 29, 53, 55])
 map(int, plotWells)
 wellsIndex = []
 wellsNames = []
