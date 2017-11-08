@@ -72,7 +72,7 @@ end
 
 
 %% Plot expected heads vs actual
-wellIndex = randsample(108, 2);
+wellIndex = [55 53];
 numSamples = 100;
 index = randsample(numRuns, numSamples);
 y_estimated = netscript(x(:,index));

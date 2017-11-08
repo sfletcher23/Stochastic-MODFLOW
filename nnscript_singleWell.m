@@ -9,21 +9,21 @@ trainNet = true;
 % get job ID
 jobid = getenv('SLURM_JOB_ID');
 % Well number
-wellIndex = 108;
+wellIndex = 53;
 
 %% Combine exisitng .mat files from simulation
 
 % Sampling parameters
-runsToUse = 600;
+runsToUse = 1000;
 maxDrawdownRuns = 20;
 timeRunsToUse = 6000;
 maxTimeRuns = 200; 
 sampleTime = false;
-maxFileNum = ceil(runsToUse/250)-1;
-
+maxFileNum = 7;
+runsPerFile = 150;
 
 % Load head data
-timeToOpen = '2017-08-15 14:31:17';
+timeToOpen = '2017-11-08 13:30:38';
 headData = [];
 runIndex = [];
 for i = 0:maxFileNum
@@ -31,41 +31,41 @@ for i = 0:maxFileNum
     data = load(filename);
     headDataTemp = data.headData;
     headData = cat(3, headData, headDataTemp(wellIndex,:,:));
-    runsThisFile = i*250 +1:(i+1)*250;
+    runsThisFile = i*runsPerFile +1:(i+1)*runsPerFile;
     runIndex = [runIndex runsThisFile];
     clear data headDataTemp
 end
 
-% Load hk and sy data
+% Load hk and ss data
 filename3 = strcat('modflowData_hk',timeToOpen,'.mat');
-filename4 = strcat('modflowData_sy',timeToOpen,'.mat');
+filename4 = strcat('modflowData_ss',timeToOpen,'.mat');
 data = load(filename3);
-hk = data.hk(runIndex); % Make sure get same runs for hk and sy as for headData
+hk = data.hk(runIndex); % Make sure get same runs for hk and ss as for headData
 clear data
 data = load(filename4);
-sy = data.sy(runIndex);
+ss = data.ss(runIndex);
 clear data
 
-% Truncate runs: affects both headData and sy, hk
+% Truncate runs: affects both headData and ss, hk
 headData = headData(:,:,1:runsToUse);
-sy = sy(1:runsToUse);
+ss = ss(1:runsToUse);
 hk = hk(1:runsToUse);
 
 
 disp('data loaded')
 
 %% Reduce time granularity, extra high drawdown samples
-% Doesn't impact sy, hk, only headData and time
+% % Doesn't impact ss, hk, only headData and time
 [numWells, numTime, numRuns] = size(headData);
 time = 1:numTime;
-if sampleTime
-    index = randsample(numTime, timeRunsToUse- maxTimeRuns)';
-    indexMaxTime = randsample([ceil(numTime * 3/4):numTime], maxTimeRuns);
-    index = [index indexMaxTime];
-    headData = headData(:,index,:);
-    [~, numTime, ~] = size(headData);
-    time = time(index);
-end
+% if sampleTime
+%     index = randsample(numTime, timeRunsToUse- maxTimeRuns)';
+%     indexMaxTime = randsample([ceil(numTime * 3/4):numTime], maxTimeRuns);
+%     index = [index indexMaxTime];
+%     headData = headData(:,index,:);
+%     [~, numTime, ~] = size(headData);
+%     time = time(index);
+% end
 %
 %% Aggregate data for time-series neural net model 
 
@@ -85,7 +85,7 @@ inputs = zeros(numRuns * numTime, 3);
 
 % period
 inputs(:,1) = reshape(repmat(hk(1:numRuns), [numTime,1]),[],1);
-inputs(:,2) = reshape(repmat(sy(1:numRuns), [numTime,1]),[],1);
+inputs(:,2) = reshape(repmat(ss(1:numRuns), [numTime,1]),[],1);
 
 % Reshape time to get a vector repeats each time numRuns times, then des
 % the same for the next time value
