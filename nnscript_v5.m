@@ -13,7 +13,6 @@ jobid = getenv('SLURM_JOB_ID');
 
 % Sampling parameters
 runsToUse = 500;
-runsPerFile = 500/5;
 maxDrawdownRuns = 0;
 maxTimeRuns = 0; 
 sampleTime = false;
@@ -29,6 +28,7 @@ for i = 0:maxFileNum
     data = load(filename);
     headDataTemp = data.headData;
     headData = cat(3, headData, headDataTemp);
+    [~,~,runsPerFile] = size(headDataTemp);
     runsThisFile = i*runsPerFile +1:(i+1)*runsPerFile;
     runIndex = [runIndex runsThisFile];
     clear data headDataTemp
