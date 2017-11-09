@@ -13,9 +13,10 @@ jobid = getenv('SLURM_JOB_ID');
 
 % Sampling parameters
 runsToUse = 1000;
-runsPerFile = 150;
+runsPerFile = 100;
+nper = 100;
 maxDrawdownRuns = 0;
-timeRunsToUse = 52*30;
+timeRunsToUse = nper*30;
 maxTimeRuns = 0; 
 sampleTime = false;
 maxFileNum = ceil(runsToUse/runsPerFile)-1 ;

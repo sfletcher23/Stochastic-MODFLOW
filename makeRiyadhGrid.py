@@ -369,7 +369,7 @@ def buildModel(plotgrid):
     # Time step parameters
     perlen = 365
     nper = 30    # number of stress periods
-    nstp = 52      # Number of time steps per stress period
+    nstp = 100      # Number of time steps per stress period
     steady = [False] * nper
     startingHead = 375
 
