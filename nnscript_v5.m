@@ -20,7 +20,7 @@ timeRunsToUse = nper*30;
 maxTimeRuns = 0; 
 sampleTime = false;
 maxFileNum = ceil(runsToUse/runsPerFile)-1 ;
-maxFileNum = 7;
+maxFileNum = 9;
 
 % Load head data
 timeToOpen = '2017-11-09 11:13:33';
@@ -45,6 +45,8 @@ clear data
 data = load(filename4);
 ss = data.ss(runIndex);
 clear data
+
+size(headData)
 
 % Truncate runs: affects both headData and ss, hk
 headData = headData(:,:,1:runsToUse);
