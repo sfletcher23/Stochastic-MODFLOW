@@ -13,7 +13,7 @@ jobid = getenv('SLURM_JOB_ID');
 
 % Sampling parameters
 runsToUse = 1000;
-runsPerFile = 100;
+runsPerFile = 50;
 nper = 100;
 maxDrawdownRuns = 0;
 timeRunsToUse = nper*30;
@@ -63,15 +63,15 @@ disp('data loaded')
 % Doesn't impact ss, hk, only headData and time
 [numWells, numTime, numRuns] = size(headData);
 time = 1:numTime;
-if sampleTime
-    index = randsample(numTime, timeRunsToUse- maxTimeRuns)';
-    indexMaxTime = randsample([ceil(numTime * 3/4):numTime], maxTimeRuns);
-    index = [index indexMaxTime];
-    headData = headData(:,index,:);
-    [~, numTime, ~] = size(headData);
-    time = time(index);
-end
-%
+% if sampleTime
+%     index = randsample(numTime, timeRunsToUse- maxTimeRuns)';
+%     indexMaxTime = randsample([ceil(numTime * 3/4):numTime], maxTimeRuns);
+%     index = [index indexMaxTime];
+%     headData = headData(:,index,:);
+%     [~, numTime, ~] = size(headData);
+%     time = time(index);
+% end
+% %
 %% Aggregate data for time-series neural net model 
 
 outputs = zeros(numRuns * numTime, numWells);

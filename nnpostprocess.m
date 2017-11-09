@@ -2,18 +2,18 @@
 
 
 %% Neural net script to use
-netname = 'myNeuralNetworkFunction_40323';
+netname = 'myNeuralNetworkFunction_42409';
 netscript = str2func(netname); 
 
 %% Create x and t
 
 loadData = true;
-runsPerFile = 150;
+runsPerFile = 50;
 
 if loadData == true
 
     % Load head data
-    timeToOpen = '2017-11-08 13:30:38';
+    timeToOpen = '2017-11-09 11:13:33';
     headData = [];
     runIndex = [];
     for i = 8
@@ -73,7 +73,7 @@ end
 
 %% Plot expected heads vs actual
 wellIndex = [55 53];
-numSamples = 100;
+numSamples = 50;
 index = randsample(numRuns, numSamples);
 y_estimated = netscript(x(:,index));
 y_actual = t(:,index);
@@ -144,7 +144,7 @@ end
 
 %% Plot targets vs estimates
 
-numSamples = 250;
+numSamples = 100;
 index = randsample(numRuns, numSamples);
 figure
 plot(1:.5:200, 1:.5:200, 'k')

@@ -26,7 +26,8 @@ for file in os.listdir("simulation_data"):
         if counter == 0:
             data = np.load("simulation_data/" + file)
             numWells = data['numWells']
-            headData = np.empty((numWells, 52 * 30, runs), float)
+            nper = data['nper']
+            headData = np.empty((numWells, nper * 30, runs), float)
         data = np.load("simulation_data/" + file)
         headData[:, :, counter] = np.squeeze(np.transpose(data['headData'],(1, 0, 2)))
         ss[counter] = data['ss']
