@@ -19,6 +19,7 @@ runs = countMax
 ss = np.empty([runs])
 hk = np.empty([runs])
 vka = np.empty([runs])
+timeSeries = np.empty([runs])
 
 
 for file in os.listdir("simulation_data"):
@@ -26,13 +27,14 @@ for file in os.listdir("simulation_data"):
         if counter == 0:
             data = np.load("simulation_data/" + file)
             numWells = data['numWells']
-            nper = data['nper']
-            headData = np.empty((numWells, nper * 30, runs), float)
+            nstp = data['nstp']
+            headData = np.empty((numWells, nstp * 30, runs), float)
         data = np.load("simulation_data/" + file)
         headData[:, :, counter] = np.squeeze(np.transpose(data['headData'],(1, 0, 2)))
         ss[counter] = data['ss']
         hk[counter] = data['hk']
         vka[counter] = data['vka']
+        timeSeries[counter] = data['time']
         counter += 1
 
 datetimeStr =str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -52,17 +54,14 @@ if saveMat:
         dicHead = dict(zip(['headData'], [headData]))
         io.savemat('modflowData_headData' + str(i) + timeToOpen, dicHead)
 
-    ss = data['ss']
-    hk = data['hk']
-    vka = data['vka']
     data.close()
 
     dicHk = dict(zip(['hk'], [hk]))
     dicSs = dict(zip(['ss'], [ss]))
+    dicTime = dict(zip(['timeSeries'], [timeSeries]))
+    dicNstp = dict(zip(['nstp'], [nstp]))
 
     io.savemat('modflowData_hk' + timeToOpen, dicHk)
     io.savemat('modflowData_ss' + timeToOpen, dicSs)
-
-
-    outputDic = dict(zip(['headData', 'hk', 'ss'], [headData, hk, ss]))
-    io.savemat('modflowData' + datetimeStr, outputDic)
+    io.savemat('modflowData_time' + timeToOpen, dicTime)
+    io.savemat('modflowData_nstp' + timeToOpen, dicNstp)
