@@ -19,8 +19,6 @@ runs = countMax
 ss = np.empty([runs])
 hk = np.empty([runs])
 vka = np.empty([runs])
-timeSeries = np.empty([runs])
-
 
 for file in os.listdir("simulation_data"):
     if file.startswith("output_2017-11-09") & (counter < countMax):
@@ -29,6 +27,7 @@ for file in os.listdir("simulation_data"):
             numWells = data['numWells']
             nstp = data['nstp']
             headData = np.empty((numWells, nstp * 30, runs), float)
+            timeSeries = np.empty([runs, nstp * 30])
         data = np.load("simulation_data/" + file)
         headData[:, :, counter] = np.squeeze(np.transpose(data['headData'],(1, 0, 2)))
         ss[counter] = data['ss']
