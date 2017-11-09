@@ -20,7 +20,7 @@ ss = data['ss']
 hk = data['hk']
 vka = data['vka']
 runs = np.size(headData[0,0,:])
-nstp = 52
+nstp = 200
 
 ss = ss[0:1500]
 hk = hk[0:1500]
