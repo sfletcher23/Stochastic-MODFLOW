@@ -16,7 +16,6 @@ runsToUse = 500;
 maxDrawdownRuns = 0;
 maxTimeRuns = 0; 
 sampleTime = false;
-maxFileNum = ceil(runsToUse/runsPerFile)-1 ;
 maxFileNum = 4;
 
 % Load head data
