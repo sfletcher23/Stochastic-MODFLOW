@@ -44,7 +44,8 @@ if saveNumpy:
 
 if saveMat:
 
-    divisions = 20;
+    divisions = 20  
+    timeToOpen = datetimeStr
 
     for i in range(divisions):
         range_min = int(i * runs / divisions)
