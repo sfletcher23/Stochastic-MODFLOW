@@ -12,18 +12,16 @@ jobid = getenv('SLURM_JOB_ID');
 %% Combine exisitng .mat files from simulation
 
 % Sampling parameters
-runsToUse = 1000;
-runsPerFile = 50;
-nper = 100;
+runsToUse = 500;
+runsPerFile = 500/5;
 maxDrawdownRuns = 0;
-timeRunsToUse = nper*30;
 maxTimeRuns = 0; 
 sampleTime = false;
 maxFileNum = ceil(runsToUse/runsPerFile)-1 ;
-maxFileNum = 9;
+maxFileNum = 4;
 
 % Load head data
-timeToOpen = '2017-11-09 11:13:33';
+timeToOpen = '2017-11-09 15:22:35';
 headData = [];
 runIndex = [];
 for i = 0:maxFileNum
@@ -46,12 +44,20 @@ data = load(filename4);
 ss = data.ss(runIndex);
 clear data
 
-size(headData)
+% Load time data
+filename6 = strcat('modflowData_nstp',timeToOpen,'.mat');
+filename5 = strcat('modflowData_time',timeToOpen,'.mat');
+timeData = load(filename5);
+timeData = timeData.timeSeries;
+nstp = load(filename6);
+nstp = nstp.nstp;
+numTime = nstp *30;
 
 % Truncate runs: affects both headData and ss, hk
 headData = headData(:,:,1:runsToUse);
 ss = ss(1:runsToUse);
 hk = hk(1:runsToUse);
+timeData = timeData(1:runsToUse,:);
 
 % Log transform hk
 hk = log(hk);
@@ -59,21 +65,9 @@ ss = log(ss);
 
 disp('data loaded')
 
-%% Reduce time granularity, extra high drawdown samples
-% Doesn't impact ss, hk, only headData and time
-[numWells, numTime, numRuns] = size(headData);
-time = 1:numTime;
-% if sampleTime
-%     index = randsample(numTime, timeRunsToUse- maxTimeRuns)';
-%     indexMaxTime = randsample([ceil(numTime * 3/4):numTime], maxTimeRuns);
-%     index = [index indexMaxTime];
-%     headData = headData(:,index,:);
-%     [~, numTime, ~] = size(headData);
-%     time = time(index);
-% end
-% %
-%% Aggregate data for time-series neural net model 
 
+%% Aggregate data for time-series neural net model 
+[numWells, ~, numRuns] = size(headData);
 outputs = zeros(numRuns * numTime, numWells);
 
 % Rehape the output data to have all the data for parameter 1, then all
@@ -94,7 +88,7 @@ inputs(:,2) = reshape(repmat(ss(1:numRuns), [numTime,1]),[],1);
 
 % Reshape time to get a vector repeats each time numRuns times, then des
 % the same for the next time value
-inputs(:,3) = repmat(time', [numRuns, 1]);
+inputs(:,3) = reshape(timeData', [numRuns*numTime, 1]);
 
 disp('inputs and outputs created')
 
