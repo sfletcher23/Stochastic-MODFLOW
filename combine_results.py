@@ -9,12 +9,12 @@ saveMat = True
 
 # Use a counter to test on only three files
 counter = 0
-countMax = 5000
+countMax = 500
 
 # Preallocate arrays
 DIR = 'simulation_data'
-runs = len([name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name))])
-
+#runs = len([name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name))])
+runs = countMax
 
 ss = np.empty([runs])
 hk = np.empty([runs])
@@ -22,7 +22,7 @@ vka = np.empty([runs])
 
 
 for file in os.listdir("simulation_data"):
-    if file.startswith("output_2017-11") & (counter < countMax):
+    if file.startswith("output_2017-11-09") & (counter < countMax):
         if counter == 0:
             data = np.load("simulation_data/" + file)
             numWells = data['numWells']
@@ -38,9 +38,31 @@ for file in os.listdir("simulation_data"):
 datetimeStr =str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
 if saveNumpy:
-    outputName = 'combined_output' + datetimeStr
+    outputName = 'simulation_data/combined_output' + datetimeStr
     np.savez(outputName, headData=headData, ss=ss, hk=hk, vka=vka)
 
 if saveMat:
+
+    divisions = 20;
+
+    for i in range(divisions):
+        range_min = int(i * runs / divisions)
+        range_max = int((i + 1) * runs / divisions)
+        headData = headData[:, :, range_min:range_max]
+        dicHead = dict(zip(['headData'], [headData]))
+        io.savemat('modflowData_headData' + str(i) + timeToOpen, dicHead)
+
+    ss = data['ss']
+    hk = data['hk']
+    vka = data['vka']
+    data.close()
+
+    dicHk = dict(zip(['hk'], [hk]))
+    dicSs = dict(zip(['ss'], [ss]))
+
+    io.savemat('modflowData_hk' + timeToOpen, dicHk)
+    io.savemat('modflowData_ss' + timeToOpen, dicSs)
+
+
     outputDic = dict(zip(['headData', 'hk', 'ss'], [headData, hk, ss]))
     io.savemat('modflowData' + datetimeStr, outputDic)
