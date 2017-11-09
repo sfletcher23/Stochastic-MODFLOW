@@ -23,7 +23,7 @@ maxFileNum = ceil(runsToUse/runsPerFile)-1 ;
 maxFileNum = 7;
 
 % Load head data
-timeToOpen = '2017-11-08 13:30:38';
+timeToOpen = '2017-11-09 11:13:33';
 headData = [];
 runIndex = [];
 for i = 0:maxFileNum
@@ -55,11 +55,6 @@ hk = hk(1:runsToUse);
 hk = log(hk);
 ss = log(ss);
 
-% Try fitting drawdown instead of absolute head
-[a, b, c] = size(headData);
-startingHead = headData(:,1,1);
-startingHead = repmat(startingHead,[1,b,c]);
-headData =  startingHead - headData;
 disp('data loaded')
 
 %% Reduce time granularity, extra high drawdown samples
