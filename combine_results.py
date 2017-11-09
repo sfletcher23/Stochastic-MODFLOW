@@ -44,14 +44,14 @@ if saveNumpy:
 
 if saveMat:
 
-    divisions = 20  
+    divisions = 5
     timeToOpen = datetimeStr
 
     for i in range(divisions):
         range_min = int(i * runs / divisions)
         range_max = int((i + 1) * runs / divisions)
-        headData = headData[:, :, range_min:range_max]
-        dicHead = dict(zip(['headData'], [headData]))
+        headDataTemp = headData[:, :, range_min:range_max]
+        dicHead = dict(zip(['headData'], [headDataTemp]))
         io.savemat('modflowData_headData' + str(i) + timeToOpen, dicHead)
 
     data.close()
