@@ -16,7 +16,7 @@ runsToUse = 500;
 maxDrawdownRuns = 0;
 maxTimeRuns = 0; 
 sampleTime = false;
-maxFileNum = 4;
+maxFileNum = 5;
 
 % Load head data
 timeToOpen = '2017-11-09 15:22:35';
@@ -58,11 +58,17 @@ ss = ss(1:runsToUse);
 hk = hk(1:runsToUse);
 timeData = timeData(1:runsToUse,:);
 
-% Log transform hk
+% Log transform data
 hk = log(hk);
 ss = log(ss);
-
-disp('data loaded')
+% [a, b, c] = size(headData);
+% startingHead = headData(:,1,1);
+% startingHead = repmat(startingHead,[1,b,c]);
+% drawdown =  startingHead - headData;
+% drawdownPlus = drawdown + 100;
+% logheadData = log(drawdownPlus);
+% temp = logheadData(:,:,1);
+% disp('data loaded')
 
 
 %% Aggregate data for time-series neural net model 
@@ -131,6 +137,9 @@ net.performFcn = 'mse';  % Mean Squared Error
 
 % Set performance goal
 net.trainParam.goal = 30;
+
+% Set number of epochs
+net.trainParam.epochs = 1500;
 
 % Choose Plot Functions
 % For a list of all plot functions type: help nnplot
