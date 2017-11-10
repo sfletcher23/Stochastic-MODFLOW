@@ -7,6 +7,10 @@ import scipy.io as io
 saveNumpy = True
 saveMat = True
 
+# Single well only
+singleWell = True
+wellIndex = 52
+
 # Use a counter to test on only three files
 counter = 0
 countMax = 500
@@ -26,10 +30,16 @@ for file in os.listdir("simulation_data"):
             data = np.load("simulation_data/" + file)
             numWells = data['numWells']
             nstp = data['nstp']
-            headData = np.empty((numWells, nstp * 30, runs), float)
+            if singleWell:
+                headData = np.empty((1, nstp * 30, runs), float)
+            else:
+                headData = np.empty((numWells, nstp * 30, runs), float)
             timeSeries = np.empty([runs, nstp * 30])
         data = np.load("simulation_data/" + file)
-        headData[:, :, counter] = np.squeeze(np.transpose(data['headData'],(1, 0, 2)))
+        if singleWell:
+            headData[:, :, counter] = np.squeeze(np.transpose(data['headData'], (1, 0, 2)))[wellIndex,:]
+        else:
+            headData[:, :, counter] = np.squeeze(np.transpose(data['headData'],(1, 0, 2)))
         ss[counter] = data['ss']
         hk[counter] = data['hk']
         vka[counter] = data['vka']

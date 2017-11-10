@@ -55,6 +55,7 @@ with open('inputWellData.csv', 'rt') as csvfile:
 plotWells = [26, 27, 55, 53, 118, 29, 30, 31, 32, 44]
 plotWells = np.argpartition(headData[:,-1,2],6)[0:6]
 plotWells = np.append(plotWells, [27, 29, 53, 55])
+plotWells = [int(x) for x in range(47,57)]
 map(int, plotWells)
 wellsIndex = []
 wellsNames = []
