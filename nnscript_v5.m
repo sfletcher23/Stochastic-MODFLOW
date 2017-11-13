@@ -12,14 +12,14 @@ jobid = getenv('SLURM_JOB_ID');
 %% Combine exisitng .mat files from simulation
 
 % Sampling parameters
-runsToUse = 500;
+runsToUse = 5000;
 maxDrawdownRuns = 0;
 maxTimeRuns = 0; 
 sampleTime = false;
 maxFileNum = 5;
 
 % Load head data
-timeToOpen = '2017-11-09 15:22:35';
+timeToOpen = '2017-11-10 12:08:16';
 headData = [];
 runIndex = [];
 for i = 0:maxFileNum

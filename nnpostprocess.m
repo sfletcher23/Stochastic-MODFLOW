@@ -2,8 +2,9 @@
 
 
 %% Neural net script to use
-netname = 'myNeuralNetworkFunction_43433';
+netname = 'myNeuralNetworkFunction_49010';
 netscript = str2func(netname); 
+singleWell = true; 
 
 % %% Create x and t
 % 
@@ -70,14 +71,14 @@ netscript = str2func(netname);
 % end
 
 % Sampling parameters
-runsToUse = 500;
+runsToUse = 5000;
 maxDrawdownRuns = 0;
 maxTimeRuns = 0; 
 sampleTime = false;
-maxFileNum = 5;
+maxFileNum = 4;
 
 % Load head data
-timeToOpen = '2017-11-09 15:22:35';
+timeToOpen = '2017-11-10 12:08:16';
 headData = [];
 runIndex = [];
 for i = 0:maxFileNum
@@ -156,7 +157,7 @@ clear inputs outputs
 
 
 %% Plot expected heads vs actual
-wellIndex = [55 53];
+wellIndex = [1 1];
 numSamples = 50;
 index = randsample(numRuns, numSamples);
 y_estimated = netscript(x(:,index));
@@ -182,7 +183,7 @@ legend('Estimated', 'Actual')
 ylim([-600 650])
 
 %% Plot histogram of errors
-numSamples = 100;
+numSamples = 1000;
 index = randsample(numRuns, numSamples);
 y_est= netscript(x(:,index));
 err = y_est - t(:,index); 
@@ -194,45 +195,44 @@ set(get(gca,'child'),'FaceColor','k','EdgeColor','k');
 xlabel('estimated head - actual head')
 ylabel('instances')
 title('Error histogran with 100 bins')
+xlim([-10 10])
 
 %% Test one time series
 
 % Sample run number to plot
-i = randsample(numRuns,1);
+sample = randsample(numRuns,10);
+time = 1:nstp*30;
 
-time = 1:52*30;
+figure;
+for count = 1:length(sample)
+    i = sample(count);
+    
+    % Get row index range of time series corresponding to sample
+    indexMin = (i-1)*nstp*30 + 1;
+    indexMax = i*nstp*30;
 
-% Get row index range of time series corresponding to sample
-indexMin = (i-1)*52*30 + 1;
-indexMax = i*52*30;
-
-% Get estimates from nn and modflow output
-xsample = x(:,indexMin:indexMax);
-y_est = netscript(xsample);
-y_act = t(:, indexMin:indexMax);
-
-% Plot time series; divide among subplots for readability
-
-for i = 1:9
-    figure
-    indexMin = (i-1)*12 +1;
-    indexMax = i*12;
-    set(gca, 'ColorOrder', parula(12), 'NextPlot', 'replacechildren');
-    f1 = plot(time,y_est(indexMin:indexMax, :), '-');
+    % Get estimates from nn and modflow output
+    xsample = x(:,indexMin:indexMax);
+    y_est = netscript(xsample);
+    y_act = t(:, indexMin:indexMax);
+    
     hold on
     set(gca, 'ColorOrder', parula(12));
-    f2 = plot(time,y_act(indexMin:indexMax, :), '-.');
-%     legend('well 1 est', 'well 2 est', 'well 1 act', 'well 2 act')
-
+    f1 = plot(time,y_est, '-');
+    hold on
+    set(gca, 'ColorOrder', parula(12));
+    f2 = plot(time,y_act, '-.');
 end
+
+
 
 %% Plot targets vs estimates
 
-numSamples = 100;
+numSamples = 500;
 index = randsample(numRuns, numSamples);
 figure
 plot(-600:450, -600:450, 'k')
-for i = 41:50
+for i = 1
     y_est= netscript(x(:,index));
     y_est = y_est(i,:);
     y_act = t(i,index);
@@ -241,11 +241,12 @@ for i = 41:50
 end
 ylabel('Estimates')
 xlabel('Targets')
-xlim([200 450])
-ylim([200 450])
+xlim([-200 350])
+ylim([-200 350])
 
 %% MSE 
 y = netscript(x);
-mse = sum(sum( (y - t) .^2 )) / numel(y) 
+mse = sum(sum( (y - t) .^2 )) / numel(y)
+rmse = sqrt(mse)
 
 
