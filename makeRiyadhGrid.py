@@ -332,7 +332,7 @@ def genParamSamples(sampleSize, **kwargs):
         scale = value[1] - value[0]
         if key == 'hk':
             s = 1.214587406719255
-            s = 1.2146031888423683 # New estimate after fixing unit problem 
+            s = 1.2146031888423683 # New estimate after fixing unit problem
             sample = lognorm(s).ppf(lhd[:, i])
         # elif key == 'ss':
         #     loc = 0.02

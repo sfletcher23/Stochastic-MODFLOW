@@ -56,8 +56,8 @@ if runMODFLOW:
     vka_max = hk_max / 10
     ss_min = 5.0e-6  # estimate .07
     ss_max = 2.5e-5
-    hk_input = 3
-    ss_input = ss_min*1.4
+    hk_input = hk_min
+    ss_input = ss_min
 
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
