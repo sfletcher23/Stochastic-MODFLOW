@@ -12,7 +12,7 @@ buwayb = False
 saveToMat = False
 
 # open combined data
-timeToOpen = '2017-11-08 12:24:51'
+timeToOpen = '2017-11-10 11:34:20'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 headData = data['headData']

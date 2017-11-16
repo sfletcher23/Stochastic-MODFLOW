@@ -16,7 +16,7 @@ runsToUse = 5000;
 maxDrawdownRuns = 0;
 maxTimeRuns = 0; 
 sampleTime = false;
-maxFileNum = 5;
+maxFileNum = 4;
 
 % Load head data
 timeToOpen = '2017-11-10 12:08:16';
