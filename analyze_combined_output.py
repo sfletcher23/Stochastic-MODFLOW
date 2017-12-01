@@ -12,7 +12,7 @@ buwayb = False
 saveToMat = False
 
 # open combined data
-timeToOpen = '2017-11-10 11:34:20'
+timeToOpen = '2017-11-16 17:04:48'
 
 data = np.load('simulation_data/combined_output'+timeToOpen+'.npz')
 headData = data['headData']
@@ -52,26 +52,27 @@ with open('inputWellData.csv', 'rt') as csvfile:
 
 # list of key wells
 # Define different well sets to highlight
-plotWells = [26, 27, 55, 53, 118, 29, 30, 31, 32, 44]
-plotWells = np.argpartition(headData[:,-1,2],6)[0:6]
-plotWells = np.append(plotWells, [27, 29, 53, 55])
-plotWells = [int(x) for x in range(47,57)]
-map(int, plotWells)
-wellsIndex = []
-wellsNames = []
-for i in range(len(well_num)):
-    if well_num[i] in plotWells:
-        wellsIndex.append(i)
-        wellsNames.append(well_name[i])
-
+# plotWells = [26, 27, 55, 53, 118, 29, 30, 31, 32, 44]
+# plotWells = np.argpartition(headData[:,-1,2],6)[0:6]
+# plotWells = np.append(plotWells, [27, 29, 53, 55])
+# plotWells = [int(x) for x in range(47,57)]
+# map(int, plotWells)
+# wellsIndex = []
+# wellsNames = []
+# for i in range(len(well_num)):
+#     if well_num[i] in plotWells:
+#         wellsIndex.append(i)
+#         wellsNames.append(well_name[i])
+wellsIndex = 0
+wellsNames = 'Buwayb'
 
 
 # Make boxplot of drawdown after 30 years for key wells
 if plotBoxplot:
-
     x = np.transpose(headData[wellsIndex,-1,:])
     fig1 = plt.figure(figsize=(8,5))
-    plt.boxplot(x, labels=wellsNames, whis= [5, 95])
+    # plt.boxplot(x, labels=wellsNames, whis= [5, 95])
+    plt.boxplot(x, whis=[5, 95])
     plt.title('Boxplot of head after 30 years by well')
     plt.ylabel('head [m]')
     plt.xticks(rotation=90)
@@ -88,7 +89,7 @@ if plotHydrographDist:
     fig2 = plt.figure(figsize=(10,8))
     count=0
     time = np.arange(0,52*30) / 52
-    for i in wellsIndex:
+    for i in [wellsIndex]:
         count += 1
         p1 = np.zeros(52*30)
         p25 = np.zeros(52 * 30)

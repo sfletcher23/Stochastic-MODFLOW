@@ -61,7 +61,7 @@ if runMODFLOW:
 
 
     # Fixed input parameters vs. LHS sampled parameters vs. read parameters from file
-    paramInput = False
+    paramInput = True
     paramReadFile = False
     if paramInput and paramReadFile:
         raise NameError('Only one type of parameter input allowed')
