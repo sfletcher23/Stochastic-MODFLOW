@@ -5,8 +5,9 @@ import scipy.interpolate as intp
 import scipy.integrate as integrate
 import matplotlib as ml
 import matplotlib.pyplot as plt
+import os
 
-num_sample = 100
+num_sample = 2000
 importProb = True
 
 if importProb:
@@ -86,7 +87,8 @@ for i in range(len(sample_s)):
     sample_k[i] = cond_ks_dist.ppf(r2)
 print(sample_k)
 
-np.save('sample_data', sample_s, sample_k)
+jobId = os.environ.get('SLURM_JOB_ID', [])
+np.save('sample_data' + jobId, sample_s, sample_k)
 outputDic = dict(zip(['sample_logs', 'sample_logk'], [sample_s, sample_k]))
-io.savemat('sample_data', outputDic)
+io.savemat('sample_data' + jobId, outputDic)
 
